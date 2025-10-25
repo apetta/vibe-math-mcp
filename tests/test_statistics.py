@@ -80,3 +80,132 @@ async def test_correlation_pearson(mcp_client):
     assert (
         result_data["result"]["x"]["y"] == 1.0 or abs(result_data["result"]["x"]["y"] - 1.0) < 1e-10
     )
+
+
+@pytest.mark.asyncio
+async def test_correlation_spearman(mcp_client):
+    """Test Spearman rank correlation."""
+    data = {
+        "x": [1.0, 2.0, 3.0, 4.0, 5.0],
+        "y": [1.0, 4.0, 9.0, 16.0, 25.0],  # Non-linear but monotonic
+    }
+    result = await mcp_client.call_tool(
+        "math_correlation", {"data": data, "method": "spearman", "output_format": "matrix"}
+    )
+    result_data = json.loads(result.content[0].text)
+    # Spearman correlation should be perfect for monotonic relationship
+    assert abs(result_data["result"]["x"]["y"] - 1.0) < 1e-10
+
+
+@pytest.mark.asyncio
+async def test_correlation_pairs_format(mcp_client):
+    """Test correlation with pairs output format."""
+    data = {
+        "a": [1.0, 2.0, 3.0],
+        "b": [2.0, 4.0, 6.0],
+        "c": [3.0, 6.0, 9.0],
+    }
+    result = await mcp_client.call_tool(
+        "math_correlation", {"data": data, "method": "pearson", "output_format": "pairs"}
+    )
+    result_data = json.loads(result.content[0].text)
+    # Should return pairwise correlations
+    assert isinstance(result_data["result"], list)
+    # Should have 3 pairs: (a,b), (a,c), (b,c)
+    assert len(result_data["result"]) == 3
+    assert all("var1" in pair and "var2" in pair for pair in result_data["result"])
+
+
+@pytest.mark.asyncio
+async def test_correlation_unequal_lengths(mcp_client):
+    """Test error when variables have unequal lengths."""
+    data = {
+        "x": [1.0, 2.0, 3.0],
+        "y": [1.0, 2.0],  # Different length
+    }
+    with pytest.raises(Exception) as exc_info:
+        await mcp_client.call_tool("math_correlation", {"data": data, "method": "pearson"})
+    # Error should mention height/shape mismatch or same number of observations
+    error_msg = str(exc_info.value).lower()
+    assert ("same number" in error_msg or "height" in error_msg or "shape" in error_msg)
+
+
+@pytest.mark.asyncio
+async def test_pivot_table_mean_aggfunc(mcp_client):
+    """Test pivot table with mean aggregation."""
+    data = [
+        {"region": "North", "product": "A", "sales": 100},
+        {"region": "North", "product": "A", "sales": 150},
+        {"region": "South", "product": "A", "sales": 200},
+    ]
+    result = await mcp_client.call_tool(
+        "math_pivot_table",
+        {
+            "data": data,
+            "index": "region",
+            "columns": "product",
+            "values": "sales",
+            "aggfunc": "mean",
+        },
+    )
+    result_data = json.loads(result.content[0].text)
+    assert "result" in result_data
+
+
+@pytest.mark.asyncio
+async def test_pivot_table_count_aggfunc(mcp_client):
+    """Test pivot table with count aggregation."""
+    data = [
+        {"region": "North", "product": "A", "sales": 100},
+        {"region": "North", "product": "A", "sales": 150},
+        {"region": "North", "product": "B", "sales": 200},
+    ]
+    result = await mcp_client.call_tool(
+        "math_pivot_table",
+        {
+            "data": data,
+            "index": "region",
+            "columns": "product",
+            "values": "sales",
+            "aggfunc": "count",
+        },
+    )
+    result_data = json.loads(result.content[0].text)
+    assert "result" in result_data
+
+
+@pytest.mark.asyncio
+async def test_pivot_table_missing_column(mcp_client):
+    """Test error when pivot table references missing column."""
+    data = [
+        {"region": "North", "product": "A", "sales": 100},
+    ]
+    with pytest.raises(Exception) as exc_info:
+        await mcp_client.call_tool(
+            "math_pivot_table",
+            {
+                "data": data,
+                "index": "region",
+                "columns": "category",  # Doesn't exist
+                "values": "sales",
+                "aggfunc": "sum",
+            },
+        )
+    # Should mention the missing column in error
+    assert "column" in str(exc_info.value).lower() or "category" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_statistics_combined_analyses(mcp_client):
+    """Test multiple analyses at once."""
+    data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 100.0]
+    result = await mcp_client.call_tool(
+        "math_statistics", {"data": data, "analyses": ["describe", "quartiles", "outliers"]}
+    )
+    result_data = json.loads(result.content[0].text)
+    # All three analyses should be present
+    assert "describe" in result_data
+    assert "quartiles" in result_data
+    assert "outliers" in result_data
+    # Outliers should detect the 100
+    assert 100.0 in result_data["outliers"]["outlier_values"]
