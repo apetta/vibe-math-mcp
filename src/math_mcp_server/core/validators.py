@@ -1,6 +1,6 @@
 """Input validation using Pydantic models for type safety and clear error messages."""
 
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Dict, List, Optional
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 
@@ -13,23 +13,19 @@ class CalculateInput(BaseModel):
         ...,
         description="Mathematical expression to evaluate (e.g., '2+2', 'sin(pi/2)', 'x^2+1')",
         min_length=1,
-        max_length=2000
+        max_length=2000,
     )
     variables: Optional[Dict[str, float]] = Field(
-        default=None,
-        description="Variable substitutions as dict (e.g., {'x': 5, 'y': 10})"
+        default=None, description="Variable substitutions as dict (e.g., {'x': 5, 'y': 10})"
     )
 
 
 class ArrayInput(BaseModel):
     """Input model for array operations."""
 
-    data: List[List[float]] = Field(
-        ...,
-        description="2D array/matrix as nested list"
-    )
+    data: List[List[float]] = Field(..., description="2D array/matrix as nested list")
 
-    @field_validator('data')
+    @field_validator("data")
     @classmethod
     def validate_array(cls, v: List[List[float]]) -> List[List[float]]:
         if not v or not v[0]:
@@ -44,8 +40,7 @@ def validate_matrix_square(matrix: List[List[float]]) -> None:
     """Validate that a matrix is square (n×n)."""
     if len(matrix) != len(matrix[0]):
         raise ValueError(
-            f"Matrix must be square for this operation. "
-            f"Got shape: {len(matrix)}×{len(matrix[0])}"
+            f"Matrix must be square for this operation. Got shape: {len(matrix)}×{len(matrix[0])}"
         )
 
 

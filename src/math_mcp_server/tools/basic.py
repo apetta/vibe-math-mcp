@@ -7,7 +7,7 @@ from mcp.types import ToolAnnotations
 import numpy as np
 
 from ..server import mcp
-from ..core import format_result, format_json
+from ..core import format_result
 
 
 @mcp.tool(
@@ -17,12 +17,9 @@ from ..core import format_result, format_json
         title="Mathematical Expression Calculator",
         readOnlyHint=True,
         idempotentHint=True,
-    )
+    ),
 )
-async def calculate(
-    expression: str,
-    variables: Optional[Dict[str, float]] = None
-) -> str:
+async def calculate(expression: str, variables: Optional[Dict[str, float]] = None) -> str:
     """
     Evaluate mathematical expressions using SymPy.
 
@@ -46,10 +43,7 @@ async def calculate(
         else:
             result = float(N(simplify(expr)))
 
-        return format_result(
-            result,
-            {"expression": expression, "variables": variables}
-        )
+        return format_result(result, {"expression": expression, "variables": variables})
     except Exception as e:
         raise ValueError(
             f"Failed to evaluate expression '{expression}'. "
@@ -65,12 +59,10 @@ async def calculate(
         title="Percentage Calculator",
         readOnlyHint=True,
         idempotentHint=True,
-    )
+    ),
 )
 async def percentage(
-    operation: Literal["of", "increase", "decrease", "change"],
-    value: float,
-    percentage: float
+    operation: Literal["of", "increase", "decrease", "change"], value: float, percentage: float
 ) -> str:
     """
     Calculate percentages with different operations.
@@ -110,7 +102,12 @@ async def percentage(
 
         return format_result(
             result,
-            {"operation": operation, "value": value, "percentage": percentage, "explanation": explanation}
+            {
+                "operation": operation,
+                "value": value,
+                "percentage": percentage,
+                "explanation": explanation,
+            },
         )
     except Exception as e:
         raise ValueError(f"Percentage calculation failed: {str(e)}")
@@ -123,12 +120,12 @@ async def percentage(
         title="Advanced Rounding",
         readOnlyHint=True,
         idempotentHint=True,
-    )
+    ),
 )
 async def round_values(
     values: Union[float, List[float]],
     method: Literal["round", "floor", "ceil", "trunc"] = "round",
-    decimals: int = 0
+    decimals: int = 0,
 ) -> str:
     """
     Perform various rounding operations.
@@ -166,10 +163,7 @@ async def round_values(
 
         final_result = float(result[0]) if is_single else result.tolist()
 
-        return format_result(
-            final_result,
-            {"method": method, "decimals": decimals}
-        )
+        return format_result(final_result, {"method": method, "decimals": decimals})
     except Exception as e:
         raise ValueError(f"Rounding operation failed: {str(e)}")
 
@@ -181,12 +175,10 @@ async def round_values(
         title="Unit Converter",
         readOnlyHint=True,
         idempotentHint=True,
-    )
+    ),
 )
 async def convert_units(
-    value: float,
-    from_unit: Literal["degrees", "radians"],
-    to_unit: Literal["degrees", "radians"]
+    value: float, from_unit: Literal["degrees", "radians"], to_unit: Literal["degrees", "radians"]
 ) -> str:
     """
     Convert between angle units.
@@ -214,8 +206,7 @@ async def convert_units(
             raise ValueError(f"Unsupported conversion: {from_unit} to {to_unit}")
 
         return format_result(
-            result,
-            {"from_unit": from_unit, "to_unit": to_unit, "original_value": value}
+            result, {"from_unit": from_unit, "to_unit": to_unit, "original_value": value}
         )
     except Exception as e:
         raise ValueError(f"Unit conversion failed: {str(e)}")

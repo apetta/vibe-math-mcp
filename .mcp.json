@@ -2,7 +2,7 @@
   "mcpServers": {
     "math": {
       "command": "uvx",
-      "args": ["--from", "/Users/akshaypetta/Desktop/Dev/math-mcp-server", "math-mcp"]
+      "args": ["--from", "/Users/akshaypetta/Desktop/Dev/math-mcp-server", "math-mcp-server"]
     }
   }
 }

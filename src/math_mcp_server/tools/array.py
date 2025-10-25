@@ -2,7 +2,6 @@
 
 from typing import List, Literal, Optional, Union
 from mcp.types import ToolAnnotations
-import polars as pl
 import numpy as np
 
 from ..server import mcp
@@ -16,12 +15,12 @@ from ..core import format_result, format_array_result, list_to_polars, polars_to
         title="Array Operations",
         readOnlyHint=True,
         idempotentHint=True,
-    )
+    ),
 )
 async def array_operations(
     operation: Literal["add", "subtract", "multiply", "divide", "power"],
     array1: List[List[float]],
-    array2: Union[List[List[float]], float]
+    array2: Union[List[List[float]], float],
 ) -> str:
     """
     Perform element-wise operations using Polars for speed.
@@ -54,15 +53,21 @@ async def array_operations(
                 raise ValueError("Division by zero")
             result_df = df1 / array2 if is_scalar else df1 / list_to_polars(array2)
         elif operation == "power":
-            result_df = df1 ** array2 if is_scalar else df1 ** list_to_polars(array2)
+            # Use NumPy for reliable power operations (Polars doesn't support ** operator)
+            arr1 = df1.to_numpy()
+            if is_scalar:
+                result_arr = arr1**array2
+            else:
+                arr2 = list_to_polars(array2).to_numpy()
+                result_arr = arr1**arr2
+            result_df = list_to_polars(result_arr.tolist())
         else:
             raise ValueError(f"Unknown operation: {operation}")
 
         result = polars_to_list(result_df)
 
         return format_array_result(
-            result,
-            {"operation": operation, "shape": f"{len(result)}×{len(result[0])}"}
+            result, {"operation": operation, "shape": f"{len(result)}×{len(result[0])}"}
         )
     except Exception as e:
         raise ValueError(f"Array operation failed: {str(e)}")
@@ -75,12 +80,12 @@ async def array_operations(
         title="Array Statistics",
         readOnlyHint=True,
         idempotentHint=True,
-    )
+    ),
 )
 async def array_statistics(
     data: List[List[float]],
     operations: List[Literal["mean", "median", "std", "min", "max", "sum"]],
-    axis: Optional[int] = None
+    axis: Optional[int] = None,
 ) -> str:
     """
     Compute statistics using Polars for optimal performance.
@@ -148,10 +153,7 @@ async def array_statistics(
                 elif op == "sum":
                     results[op] = np.sum(arr, axis=1).tolist()
 
-        return format_result(
-            results,
-            {"shape": f"{len(data)}×{len(data[0])}", "axis": axis}
-        )
+        return format_result(results, {"shape": f"{len(data)}×{len(data[0])}", "axis": axis})
     except Exception as e:
         raise ValueError(f"Statistics calculation failed: {str(e)}")
 
@@ -163,13 +165,13 @@ async def array_statistics(
         title="Array Aggregation",
         readOnlyHint=True,
         idempotentHint=True,
-    )
+    ),
 )
 async def array_aggregate(
     operation: Literal["sumproduct", "weighted_average", "dot_product"],
     array1: List[float],
     array2: Optional[List[float]] = None,
-    weights: Optional[List[float]] = None
+    weights: Optional[List[float]] = None,
 ) -> str:
     """
     Perform advanced aggregation operations.
@@ -204,16 +206,15 @@ async def array_aggregate(
                 raise ValueError("weighted_average requires weights")
             w = np.array(weights, dtype=float)
             if len(arr1) != len(w):
-                raise ValueError(f"Array and weights must have same length. Got {len(arr1)} and {len(w)}")
+                raise ValueError(
+                    f"Array and weights must have same length. Got {len(arr1)} and {len(w)}"
+                )
             result = float(np.average(arr1, weights=w))
 
         else:
             raise ValueError(f"Unknown operation: {operation}")
 
-        return format_result(
-            result,
-            {"operation": operation}
-        )
+        return format_result(result, {"operation": operation})
     except Exception as e:
         raise ValueError(f"Aggregation failed: {str(e)}")
 
@@ -225,12 +226,12 @@ async def array_aggregate(
         title="Array Transformation",
         readOnlyHint=True,
         idempotentHint=True,
-    )
+    ),
 )
 async def array_transform(
     data: List[List[float]],
     transform: Literal["normalize", "standardize", "minmax_scale", "log_transform"],
-    axis: Optional[int] = None
+    axis: Optional[int] = None,
 ) -> str:
     """
     Apply transformations to arrays.
@@ -303,9 +304,6 @@ async def array_transform(
         else:
             raise ValueError(f"Unknown transform: {transform}")
 
-        return format_array_result(
-            result,
-            {"transform": transform, "axis": axis}
-        )
+        return format_array_result(result, {"transform": transform, "axis": axis})
     except Exception as e:
         raise ValueError(f"Transformation failed: {str(e)}")

@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.scripts]
-math-mcp = "math_mcp_server.server:main"
+math-mcp-server = "math_mcp_server.server:main"
 
 [project.optional-dependencies]
 dev = [
@@ -44,6 +44,7 @@ addopts = [
     "-ra",
     "--cov=math_mcp_server",
     "--cov-report=term-missing",
+    "--cov-report=html",
 ]
 
 [tool.ruff]
@@ -61,9 +62,19 @@ exclude_lines = [
     "raise NotImplementedError",
 ]
 
+[tool.poe.tasks]
+test = "pytest -n auto"
+lint = "ruff check ."
+format = "ruff format ."
+check = ["lint", "test"]
+clean = { shell = "rm -rf .coverage htmlcov .pytest_cache **/__pycache__" }
+
 [dependency-groups]
 dev = [
     "pytest>=8.4.2",
     "pytest-asyncio>=1.2.0",
     "pytest-cov>=7.0.0",
+    "pytest-xdist>=3.5.0",
+    "poethepoet>=0.24.0",
+    "ruff>=0.3.0",
 ]

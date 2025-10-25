@@ -1,12 +1,14 @@
 """Data type conversion utilities for Polars and Pandas interoperability."""
 
-from typing import List, Optional
+from typing import List, Optional, Sequence, Union
 import polars as pl
 import pandas as pd
 import numpy as np
 
 
-def list_to_polars(data: List[List[float]], columns: Optional[List[str]] = None) -> pl.DataFrame:
+def list_to_polars(
+    data: Sequence[Sequence[Union[int, float]]], columns: Optional[List[str]] = None
+) -> pl.DataFrame:
     """Convert nested list to Polars DataFrame.
 
     Args:
@@ -45,7 +47,7 @@ def polars_to_pandas(df: pl.DataFrame) -> pd.DataFrame:
     return df.to_pandas()
 
 
-def list_to_numpy(data: List[List[float]]) -> np.ndarray:
+def list_to_numpy(data: Sequence[Sequence[Union[int, float]]]) -> np.ndarray:
     """Convert nested list to NumPy array.
 
     Args:

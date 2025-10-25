@@ -10,13 +10,11 @@ logger = logging.getLogger(__name__)
 # Create FastMCP server instance
 mcp = FastMCP("math-mcp")
 
-# Import and register all tools
-from .tools import basic  # noqa: F401, E402
-from .tools import array  # noqa: F401, E402
-from .tools import statistics  # noqa: F401, E402
-from .tools import financial  # noqa: F401, E402
-from .tools import linalg  # noqa: F401, E402
-from .tools import calculus  # noqa: F401, E402
+# Import and register all tools (must be after mcp instance creation for decorators)
+from .tools import array, basic, calculus, financial, linalg, statistics  # noqa: E402
+
+# Explicitly declare as part of module interface (tools registered via decorators)
+__all__ = ["mcp", "basic", "array", "statistics", "financial", "linalg", "calculus"]
 
 
 def main():

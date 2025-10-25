@@ -3,7 +3,6 @@
 import math
 from typing import List, Literal, Optional
 from mcp.types import ToolAnnotations
-import numpy as np
 
 from ..server import mcp
 from ..core import format_result
@@ -16,7 +15,7 @@ from ..core import format_result
         title="Financial Calculations",
         readOnlyHint=True,
         idempotentHint=True,
-    )
+    ),
 )
 async def financial_calcs(
     calculation: Literal["pv", "fv", "pmt", "irr", "npv"],
@@ -24,8 +23,8 @@ async def financial_calcs(
     periods: Optional[int] = None,
     payment: Optional[float] = None,
     present_value: Optional[float] = None,
-    future_value: Optional[float] = None,
-    cash_flows: Optional[List[float]] = None
+    _future_value: Optional[float] = None,
+    cash_flows: Optional[List[float]] = None,
 ) -> str:
     """
     Perform time value of money calculations.
@@ -67,7 +66,9 @@ async def financial_calcs(
             if rate == 0:
                 result = -present_value - payment * periods
             else:
-                result = -present_value * (1 + rate) ** periods - payment * (((1 + rate) ** periods - 1) / rate)
+                result = -present_value * (1 + rate) ** periods - payment * (
+                    ((1 + rate) ** periods - 1) / rate
+                )
 
         elif calculation == "pmt":
             # Payment
@@ -76,7 +77,9 @@ async def financial_calcs(
             if rate == 0:
                 result = -present_value / periods
             else:
-                result = -present_value * (rate * (1 + rate) ** periods) / ((1 + rate) ** periods - 1)
+                result = (
+                    -present_value * (rate * (1 + rate) ** periods) / ((1 + rate) ** periods - 1)
+                )
 
         elif calculation == "irr":
             # Internal Rate of Return
@@ -90,7 +93,9 @@ async def financial_calcs(
 
             for _ in range(max_iter):
                 npv_val = sum(cf / (1 + guess) ** i for i, cf in enumerate(cash_flows))
-                npv_derivative = sum(-i * cf / (1 + guess) ** (i + 1) for i, cf in enumerate(cash_flows))
+                npv_derivative = sum(
+                    -i * cf / (1 + guess) ** (i + 1) for i, cf in enumerate(cash_flows)
+                )
 
                 if abs(npv_val) < tolerance:
                     break
@@ -113,10 +118,7 @@ async def financial_calcs(
         else:
             raise ValueError(f"Unknown calculation type: {calculation}")
 
-        return format_result(
-            float(result),
-            {"calculation": calculation, "rate": rate}
-        )
+        return format_result(float(result), {"calculation": calculation, "rate": rate})
     except Exception as e:
         raise ValueError(f"Financial calculation failed: {str(e)}")
 
@@ -128,13 +130,15 @@ async def financial_calcs(
         title="Compound Interest",
         readOnlyHint=True,
         idempotentHint=True,
-    )
+    ),
 )
 async def compound_interest(
     principal: float,
     rate: float,
     time: float,
-    frequency: Literal["annual", "semi-annual", "quarterly", "monthly", "daily", "continuous"] = "annual"
+    frequency: Literal[
+        "annual", "semi-annual", "quarterly", "monthly", "daily", "continuous"
+    ] = "annual",
 ) -> str:
     """
     Calculate compound interest with different compounding frequencies.
@@ -183,7 +187,7 @@ async def compound_interest(
                 "time": time,
                 "frequency": frequency,
                 "interest_earned": float(interest_earned),
-            }
+            },
         )
     except Exception as e:
         raise ValueError(f"Compound interest calculation failed: {str(e)}")

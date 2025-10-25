@@ -2,14 +2,11 @@
 
 from typing import Literal, Optional, Union
 from mcp.types import ToolAnnotations
-from sympy import (
-    sympify, diff, integrate, limit, series, Symbol, oo,
-    simplify, N, lambdify
-)
+from sympy import sympify, diff, integrate, limit, series, Symbol, oo, N, lambdify
 import scipy.integrate as integrate_numeric
 
 from ..server import mcp
-from ..core import format_result, format_json
+from ..core import format_json
 
 
 @mcp.tool(
@@ -19,13 +16,10 @@ from ..core import format_result, format_json
         title="Derivative Calculator",
         readOnlyHint=True,
         idempotentHint=True,
-    )
+    ),
 )
 async def derivative(
-    expression: str,
-    variable: str,
-    order: int = 1,
-    point: Optional[float] = None
+    expression: str, variable: str, order: int = 1, point: Optional[float] = None
 ) -> str:
     """
     Calculate derivatives using SymPy.
@@ -69,8 +63,7 @@ async def derivative(
 
     except Exception as e:
         raise ValueError(
-            f"Derivative calculation failed: {str(e)}. "
-            f"Example: expression='x^2', variable='x'"
+            f"Derivative calculation failed: {str(e)}. Example: expression='x^2', variable='x'"
         )
 
 
@@ -81,14 +74,14 @@ async def derivative(
         title="Integral Calculator",
         readOnlyHint=True,
         idempotentHint=True,
-    )
+    ),
 )
 async def integral(
     expression: str,
     variable: str,
     lower_bound: Optional[float] = None,
     upper_bound: Optional[float] = None,
-    method: Literal["symbolic", "numerical"] = "symbolic"
+    method: Literal["symbolic", "numerical"] = "symbolic",
 ) -> str:
     """
     Calculate integrals using SymPy (symbolic) or SciPy (numerical).
@@ -112,7 +105,7 @@ async def integral(
         expr = sympify(expression)
         var = Symbol(variable)
 
-        is_definite = (lower_bound is not None and upper_bound is not None)
+        is_definite = lower_bound is not None and upper_bound is not None
 
         if method == "symbolic":
             if is_definite:
@@ -124,7 +117,7 @@ async def integral(
                     "upper_bound": upper_bound,
                     "result": float(N(result)),
                     "symbolic_result": str(result),
-                    "type": "definite"
+                    "type": "definite",
                 }
             else:
                 result = integrate(expr, var)
@@ -132,7 +125,7 @@ async def integral(
                     "expression": expression,
                     "variable": variable,
                     "result": str(result),
-                    "type": "indefinite"
+                    "type": "indefinite",
                 }
 
         elif method == "numerical":
@@ -140,7 +133,7 @@ async def integral(
                 raise ValueError("Numerical integration requires lower_bound and upper_bound")
 
             # Convert SymPy expression to numeric function
-            func = lambdify(var, expr, 'numpy')
+            func = lambdify(var, expr, "numpy")
 
             # Use SciPy's quad for numerical integration
             result, error = integrate_numeric.quad(func, lower_bound, upper_bound)
@@ -153,7 +146,7 @@ async def integral(
                 "result": float(result),
                 "error_estimate": float(error),
                 "method": "numerical",
-                "type": "definite"
+                "type": "definite",
             }
 
         else:
@@ -175,7 +168,7 @@ async def integral(
         title="Limits and Series",
         readOnlyHint=True,
         idempotentHint=True,
-    )
+    ),
 )
 async def limits_series(
     expression: str,
@@ -183,7 +176,7 @@ async def limits_series(
     point: Union[float, str],
     operation: Literal["limit", "series"] = "limit",
     order: int = 6,
-    direction: Literal["+", "-", "+-"] = "+-"
+    direction: Literal["+", "-", "+-"] = "+-",
 ) -> str:
     """
     Calculate limits or series expansions.
@@ -230,12 +223,12 @@ async def limits_series(
                 "point": str(point),
                 "direction": direction,
                 "limit": str(result),
-                "numeric_value": float(N(result)) if result.is_number else None
+                "numeric_value": float(N(result)) if result.is_number else None,
             }
 
         elif operation == "series":
             # Series expansion
-            series_expr = series(expr, var, point_sym, order)
+            series_expr = series(expr, var, point_sym, order)  # type: ignore[arg-type]
             series_str = str(series_expr)
 
             # Remove O() term for cleaner output
@@ -247,7 +240,7 @@ async def limits_series(
                 "point": str(point),
                 "order": order,
                 "series": series_str,
-                "series_without_O": str(series_no_o)
+                "series_without_O": str(series_no_o),
             }
 
         else:

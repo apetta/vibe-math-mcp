@@ -3,6 +3,7 @@
 from typing import List, Literal, Optional
 from mcp.types import ToolAnnotations
 import numpy as np
+from numpy.typing import NDArray
 import scipy.linalg as la
 
 from ..server import mcp
@@ -16,12 +17,12 @@ from ..core import format_result, format_array_result, list_to_numpy, numpy_to_l
         title="Matrix Operations",
         readOnlyHint=True,
         idempotentHint=True,
-    )
+    ),
 )
 async def matrix_operations(
     operation: Literal["multiply", "inverse", "transpose", "determinant", "trace"],
     matrix1: List[List[float]],
-    matrix2: Optional[List[List[float]]] = None
+    matrix2: Optional[List[List[float]]] = None,
 ) -> str:
     """
     Perform matrix operations using NumPy's BLAS-optimised routines.
@@ -73,13 +74,17 @@ async def matrix_operations(
             if mat1.shape[0] != mat1.shape[1]:
                 raise ValueError(f"Matrix must be square for determinant. Got shape: {mat1.shape}")
             result = float(la.det(mat1))
-            return format_result(result, {"operation": operation, "shape": f"{mat1.shape[0]}×{mat1.shape[1]}"})
+            return format_result(
+                result, {"operation": operation, "shape": f"{mat1.shape[0]}×{mat1.shape[1]}"}
+            )
 
         elif operation == "trace":
             if mat1.shape[0] != mat1.shape[1]:
                 raise ValueError(f"Matrix must be square for trace. Got shape: {mat1.shape}")
             result = float(np.trace(mat1))
-            return format_result(result, {"operation": operation, "shape": f"{mat1.shape[0]}×{mat1.shape[1]}"})
+            return format_result(
+                result, {"operation": operation, "shape": f"{mat1.shape[0]}×{mat1.shape[1]}"}
+            )
 
         else:
             raise ValueError(f"Unknown operation: {operation}")
@@ -97,12 +102,12 @@ async def matrix_operations(
         title="Linear System Solver",
         readOnlyHint=True,
         idempotentHint=True,
-    )
+    ),
 )
 async def solve_linear_system(
     coefficients: List[List[float]],
     constants: List[float],
-    method: Literal["direct", "least_squares"] = "direct"
+    method: Literal["direct", "least_squares"] = "direct",
 ) -> str:
     """
     Solve linear systems using SciPy (preferred over matrix inversion).
@@ -141,11 +146,11 @@ async def solve_linear_system(
                 raise ValueError("System is singular or poorly conditioned")
 
         elif method == "least_squares":
-            x, residuals, rank, s = la.lstsq(A, b)
+            x, residuals, rank, _s = la.lstsq(A, b)  # type: ignore[misc]
             metadata = {
                 "method": method,
                 "rank": int(rank),
-                "residuals": residuals.tolist() if len(residuals) > 0 else None
+                "residuals": residuals.tolist() if len(residuals) > 0 else None,
             }
             return format_result(x.tolist(), metadata)
 
@@ -167,11 +172,10 @@ async def solve_linear_system(
         title="Matrix Decomposition",
         readOnlyHint=True,
         idempotentHint=True,
-    )
+    ),
 )
 async def matrix_decomposition(
-    matrix: List[List[float]],
-    decomposition: Literal["eigen", "svd", "qr", "cholesky", "lu"]
+    matrix: List[List[float]], decomposition: Literal["eigen", "svd", "qr", "cholesky", "lu"]
 ) -> str:
     """
     Perform matrix decompositions using SciPy.
@@ -195,38 +199,46 @@ async def matrix_decomposition(
 
         if decomposition == "eigen":
             if mat.shape[0] != mat.shape[1]:
-                raise ValueError(f"Eigenvalue decomposition requires square matrix. Got shape: {mat.shape}")
+                raise ValueError(
+                    f"Eigenvalue decomposition requires square matrix. Got shape: {mat.shape}"
+                )
 
-            eigenvalues, eigenvectors = la.eig(mat)
+            eigenvalues: NDArray[np.complexfloating]
+            eigenvectors: NDArray[np.complexfloating]
+            eigenvalues, eigenvectors = la.eig(mat)  # type: ignore[misc]
 
-            return format_json({
-                "eigenvalues": eigenvalues.tolist(),
-                "eigenvectors": eigenvectors.tolist(),
-                "decomposition": decomposition
-            })
+            return format_json(
+                {
+                    "eigenvalues": eigenvalues.tolist(),
+                    "eigenvectors": eigenvectors.tolist(),
+                    "decomposition": decomposition,
+                }
+            )
 
         elif decomposition == "svd":
             U, s, Vt = la.svd(mat)
 
-            return format_json({
-                "U": U.tolist(),
-                "singular_values": s.tolist(),
-                "Vt": Vt.tolist(),
-                "decomposition": decomposition
-            })
+            return format_json(
+                {
+                    "U": U.tolist(),
+                    "singular_values": s.tolist(),
+                    "Vt": Vt.tolist(),
+                    "decomposition": decomposition,
+                }
+            )
 
         elif decomposition == "qr":
-            Q, R = la.qr(mat)
+            Q: NDArray[np.floating]
+            R: NDArray[np.floating]
+            Q, R = la.qr(mat)  # type: ignore[misc]
 
-            return format_json({
-                "Q": Q.tolist(),
-                "R": R.tolist(),
-                "decomposition": decomposition
-            })
+            return format_json({"Q": Q.tolist(), "R": R.tolist(), "decomposition": decomposition})
 
         elif decomposition == "cholesky":
             if mat.shape[0] != mat.shape[1]:
-                raise ValueError(f"Cholesky decomposition requires square matrix. Got shape: {mat.shape}")
+                raise ValueError(
+                    f"Cholesky decomposition requires square matrix. Got shape: {mat.shape}"
+                )
 
             # Check if matrix is symmetric
             if not np.allclose(mat, mat.T):
@@ -234,24 +246,24 @@ async def matrix_decomposition(
 
             try:
                 L = la.cholesky(mat, lower=True)
-                return format_json({
-                    "L": L.tolist(),
-                    "decomposition": decomposition,
-                    "note": "A = L * L^T"
-                })
+                return format_json(
+                    {"L": L.tolist(), "decomposition": decomposition, "note": "A = L * L^T"}
+                )
             except np.linalg.LinAlgError:
                 raise ValueError("Matrix is not positive definite")
 
         elif decomposition == "lu":
-            P, L, U = la.lu(mat)
+            P, L, U = la.lu(mat)  # type: ignore[misc]
 
-            return format_json({
-                "P": P.tolist(),
-                "L": L.tolist(),
-                "U": U.tolist(),
-                "decomposition": decomposition,
-                "note": "A = P * L * U"
-            })
+            return format_json(
+                {
+                    "P": P.tolist(),
+                    "L": L.tolist(),
+                    "U": U.tolist(),
+                    "decomposition": decomposition,
+                    "note": "A = P * L * U",
+                }
+            )
 
         else:
             raise ValueError(f"Unknown decomposition: {decomposition}")

@@ -1,6 +1,11 @@
 """Core utilities for the Math MCP server."""
 
-from .validators import CalculateInput, ArrayInput, validate_matrix_square, validate_arrays_compatible
+from .validators import (
+    CalculateInput,
+    ArrayInput,
+    validate_matrix_square,
+    validate_arrays_compatible,
+)
 from .formatters import format_json, format_result, format_array_result, format_error
 from .converters import (
     list_to_polars,
