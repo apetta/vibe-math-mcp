@@ -1,7 +1,8 @@
 """Array calculation tools using Polars for optimal performance."""
 
-from typing import List, Literal, Optional, Union
+from typing import List, Literal, Optional, Union, cast
 from mcp.types import ToolAnnotations
+import json
 import numpy as np
 
 from ..server import mcp
@@ -20,7 +21,7 @@ from ..core import format_result, format_array_result, list_to_polars, polars_to
 async def array_operations(
     operation: Literal["add", "subtract", "multiply", "divide", "power"],
     array1: List[List[float]],
-    array2: Union[List[List[float]], float],
+    array2: Union[str, List[List[float]], float],
 ) -> str:
     """
     Perform element-wise operations using Polars for speed.
@@ -38,6 +39,13 @@ async def array_operations(
         JSON with result array
     """
     try:
+        # Handle XML serialization: parse stringified JSON
+        if isinstance(array2, str):
+            try:
+                array2 = cast(List[List[float]], json.loads(array2))
+            except (json.JSONDecodeError, ValueError):
+                array2 = cast(float, float(array2))
+
         df1 = list_to_polars(array1)
 
         is_scalar = isinstance(array2, (int, float))
@@ -170,8 +178,8 @@ async def array_statistics(
 async def array_aggregate(
     operation: Literal["sumproduct", "weighted_average", "dot_product"],
     array1: List[float],
-    array2: Optional[List[float]] = None,
-    weights: Optional[List[float]] = None,
+    array2: Union[str, List[float], None] = None,
+    weights: Union[str, List[float], None] = None,
 ) -> str:
     """
     Perform advanced aggregation operations.
@@ -191,6 +199,12 @@ async def array_aggregate(
         JSON with aggregated result
     """
     try:
+        # Parse stringified JSON from XML serialization
+        if isinstance(array2, str):
+            array2 = cast(List[float], json.loads(array2))
+        if isinstance(weights, str):
+            weights = cast(List[float], json.loads(weights))
+
         arr1 = np.array(array1, dtype=float)
 
         if operation == "sumproduct" or operation == "dot_product":

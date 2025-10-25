@@ -1,7 +1,8 @@
 """Financial mathematics tools."""
 
+import json
 import math
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Union, cast
 from mcp.types import ToolAnnotations
 
 from ..server import mcp
@@ -24,7 +25,7 @@ async def financial_calcs(
     payment: Optional[float] = None,
     present_value: Optional[float] = None,
     _future_value: Optional[float] = None,
-    cash_flows: Optional[List[float]] = None,
+    cash_flows: Union[str, List[float], None] = None,
 ) -> str:
     """
     Perform time value of money calculations.
@@ -48,14 +49,26 @@ async def financial_calcs(
         JSON with calculated financial result
     """
     try:
+        # Parse stringified JSON from XML serialization
+        if isinstance(cash_flows, str):
+            cash_flows = cast(List[float], json.loads(cash_flows))
+
         if calculation == "pv":
             # Present Value
-            if payment is None or periods is None:
-                raise ValueError("PV calculation requires rate, periods, and payment")
-            if rate == 0:
-                result = -payment * periods
+            if _future_value is not None and periods is not None:
+                # PV of a lump sum: PV = FV / (1 + r)^n
+                if rate == 0:
+                    result = -_future_value
+                else:
+                    result = -_future_value / ((1 + rate) ** periods)
+            elif payment is not None and periods is not None:
+                # PV of an annuity: PV = PMT × [(1 - (1 + r)^-n) / r]
+                if rate == 0:
+                    result = -payment * periods
+                else:
+                    result = payment * ((1 - (1 + rate) ** -periods) / rate)
             else:
-                result = payment * ((1 - (1 + rate) ** -periods) / rate)
+                raise ValueError("PV calculation requires rate, periods, and either future_value or payment")
 
         elif calculation == "fv":
             # Future Value

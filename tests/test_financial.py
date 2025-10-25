@@ -18,13 +18,50 @@ async def test_financial_fv(mcp_client):
 
 @pytest.mark.asyncio
 async def test_financial_pv(mcp_client):
-    """Test present value calculation."""
+    """Test present value calculation (annuity)."""
     result = await mcp_client.call_tool(
         "math_financial_calcs", {"calculation": "pv", "rate": 0.05, "periods": 10, "payment": -100}
     )
     data = json.loads(result.content[0].text)
     # PV calculation returns negative value representing outflow
     assert "result" in data
+
+
+@pytest.mark.asyncio
+async def test_financial_pv_lump_sum(mcp_client):
+    """Test present value of a lump sum."""
+    # What is the present value of £10,000 received in 10 years at 5% interest?
+    # PV = FV / (1 + r)^n = 10000 / (1.05^10) = 6139.13
+    result = await mcp_client.call_tool(
+        "math_financial_calcs",
+        {"calculation": "pv", "rate": 0.05, "periods": 10, "_future_value": 10000}
+    )
+    data = json.loads(result.content[0].text)
+    expected = 10000 / (1.05 ** 10)  # 6139.13
+    assert abs(data["result"] - (-expected)) < 0.01  # Negative because it's cash outflow
+
+
+@pytest.mark.asyncio
+async def test_financial_pv_lump_sum_zero_rate(mcp_client):
+    """Test present value of lump sum with zero interest rate."""
+    # With 0% rate, PV = FV (money doesn't change value)
+    result = await mcp_client.call_tool(
+        "math_financial_calcs",
+        {"calculation": "pv", "rate": 0.0, "periods": 10, "_future_value": 10000}
+    )
+    data = json.loads(result.content[0].text)
+    assert abs(data["result"] - (-10000.0)) < 0.01
+
+
+@pytest.mark.asyncio
+async def test_financial_pv_missing_both_params(mcp_client):
+    """Test error when PV is calculated without future_value or payment."""
+    with pytest.raises(Exception) as exc_info:
+        await mcp_client.call_tool(
+            "math_financial_calcs",
+            {"calculation": "pv", "rate": 0.05, "periods": 10}
+        )
+    assert "future_value or payment" in str(exc_info.value).lower()
 
 
 @pytest.mark.asyncio

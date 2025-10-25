@@ -1,7 +1,8 @@
 """Linear algebra tools using NumPy and SciPy."""
 
-from typing import List, Literal, Optional
+from typing import List, Literal, Union, cast
 from mcp.types import ToolAnnotations
+import json
 import numpy as np
 from numpy.typing import NDArray
 import scipy.linalg as la
@@ -22,7 +23,7 @@ from ..core import format_result, format_array_result, list_to_numpy, numpy_to_l
 async def matrix_operations(
     operation: Literal["multiply", "inverse", "transpose", "determinant", "trace"],
     matrix1: List[List[float]],
-    matrix2: Optional[List[List[float]]] = None,
+    matrix2: Union[str, List[List[float]], None] = None,
 ) -> str:
     """
     Perform matrix operations using NumPy's BLAS-optimised routines.
@@ -43,6 +44,10 @@ async def matrix_operations(
         JSON with result (matrix or scalar)
     """
     try:
+        # Parse stringified JSON from XML serialization
+        if isinstance(matrix2, str):
+            matrix2 = cast(List[List[float]], json.loads(matrix2))
+
         mat1 = list_to_numpy(matrix1)
 
         if operation == "multiply":
