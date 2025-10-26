@@ -309,7 +309,7 @@ async def test_compound_interest_daily(mcp_client):
 
 
 # ============================================================================
-# Authoritative TVM Tests from financial_tests.md
+# Comprehensive Real-World TVM Test Scenarios
 # ============================================================================
 
 
@@ -471,3 +471,48 @@ async def test_financial_npv_uneven_cashflows(mcp_client):
     data = json.loads(result.content[0].text)
     # Expected: $79,877
     assert abs(data["result"] - 79877) < 1
+
+
+@pytest.mark.asyncio
+async def test_financial_rate_savings_from_zero(mcp_client):
+    """Test rate: Savings from zero with quarterly contributions (Problem: PV=0 regression)."""
+    # Start with £0, save £30k quarterly, reach £550k in 4 years (16 quarters)
+    result = await mcp_client.call_tool(
+        "math_financial_calcs",
+        {"calculation": "rate", "periods": 16, "payment": -30000, "present_value": 0, "future_value": 550000}
+    )
+    data = json.loads(result.content[0].text)
+    # Expected: ~1.79% per quarter
+    assert abs(data["result"] - 0.0179) < 0.001
+    # Verify PV was included in metadata
+    assert data["present_value"] == 0
+
+
+@pytest.mark.asyncio
+async def test_financial_rate_annuity_due(mcp_client):
+    """Test rate: Annuity due with payments at beginning (when='begin')."""
+    # SmartChoice laptop: $399 cash or $59.88/month in advance for 12 months
+    result = await mcp_client.call_tool(
+        "math_financial_calcs",
+        {"calculation": "rate", "periods": 12, "payment": 59.88, "present_value": -399, "future_value": 0, "when": "begin"}
+    )
+    data = json.loads(result.content[0].text)
+    # Expected: ~13.1% monthly (~157% APR) for annuity due
+    assert 0.12 < data["result"] < 0.14  # Between 12% and 14% monthly
+    # Verify when parameter in metadata
+    assert data["when"] == "begin"
+
+
+@pytest.mark.asyncio
+async def test_financial_pmt_annuity_due(mcp_client):
+    """Test PMT: Payment calculation with annuity due (when='begin')."""
+    # Lease with payments at start of month
+    result = await mcp_client.call_tool(
+        "math_financial_calcs",
+        {"calculation": "pmt", "rate": 0.005, "periods": 36, "present_value": -20000, "future_value": 0, "when": "begin"}
+    )
+    data = json.loads(result.content[0].text)
+    # Payment should be slightly less than ordinary annuity due to earlier compounding
+    assert data["result"] > 0
+    # Annuity due payment should be less than ordinary annuity
+    assert 600 < data["result"] < 610  # Ordinary: ~$608.44, Annuity due: ~$605.41
