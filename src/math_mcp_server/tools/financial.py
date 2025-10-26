@@ -2,7 +2,7 @@
 
 import json
 import math
-from typing import List, Literal, Optional, Union, cast
+from typing import Any, Dict, List, Literal, Optional, Union, cast
 from mcp.types import ToolAnnotations
 
 from ..server import mcp
@@ -266,7 +266,22 @@ async def financial_calcs(
         else:
             raise ValueError(f"Unknown calculation type: {calculation}")
 
-        return format_result(float(result), {"calculation": calculation, "rate": rate})
+        # Build metadata with all provided parameters for better context management
+        metadata: Dict[str, Any] = {"calculation": calculation}
+        if rate is not None:
+            metadata["rate"] = rate
+        if periods is not None:
+            metadata["periods"] = periods
+        if payment is not None:
+            metadata["payment"] = payment
+        if present_value is not None:
+            metadata["present_value"] = present_value
+        if future_value is not None:
+            metadata["future_value"] = future_value
+        if cash_flows is not None:
+            metadata["cash_flows"] = cash_flows
+
+        return format_result(float(result), metadata)
     except Exception as e:
         raise ValueError(f"Financial calculation failed: {str(e)}")
 
