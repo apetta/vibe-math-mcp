@@ -10,18 +10,46 @@ def format_json(data: Dict[str, Any]) -> str:
 
 
 def format_result(value: Any, metadata: Optional[Dict[str, Any]] = None) -> str:
-    """Format a single result with optional metadata."""
+    """Format a single result with optional metadata.
+
+    If metadata contains 'context', it will be included at the top level
+    of the response for LLM state tracking.
+    """
     result = {"result": value}
+
+    # Extract context if present and add it at top level
+    context = None
     if metadata:
-        result.update(metadata)
+        metadata_copy = metadata.copy()
+        context = metadata_copy.pop("context", None)
+        result.update(metadata_copy)
+
+    # Add context at top level if provided
+    if context is not None:
+        result["context"] = context
+
     return format_json(result)
 
 
 def format_array_result(values: List[Any], metadata: Optional[Dict[str, Any]] = None) -> str:
-    """Format array results."""
+    """Format array results.
+
+    If metadata contains 'context', it will be included at the top level
+    of the response for LLM state tracking.
+    """
     result = {"values": values}
+
+    # Extract context if present and add it at top level
+    context = None
     if metadata:
-        result.update(metadata)
+        metadata_copy = metadata.copy()
+        context = metadata_copy.pop("context", None)
+        result.update(metadata_copy)
+
+    # Add context at top level if provided
+    if context is not None:
+        result["context"] = context
+
     return format_json(result)
 
 

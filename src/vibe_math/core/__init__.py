@@ -14,6 +14,7 @@ from .converters import (
     list_to_numpy,
     numpy_to_list,
 )
+from .types import ContextParam
 
 __all__ = [
     # Validators
@@ -32,4 +33,6 @@ __all__ = [
     "polars_to_pandas",
     "list_to_numpy",
     "numpy_to_list",
+    # Types
+    "ContextParam",
 ]

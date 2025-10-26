@@ -6,7 +6,7 @@ from mcp.types import ToolAnnotations
 import polars as pl
 
 from ..server import mcp
-from ..core import format_result, format_json
+from ..core import format_result, format_json, ContextParam
 
 
 @mcp.tool(
@@ -44,6 +44,7 @@ FULL ANALYSIS:
 async def statistics(
     data: Annotated[List[float], Field(description="List of numerical values (e.g., [1,2,3,4,5,100])")],
     analyses: Annotated[List[Literal["describe", "quartiles", "outliers"]], Field(description="Types of analysis to perform")],
+    context: ContextParam = None,
 ) -> str:
     """Comprehensive statistical analysis."""
     try:
@@ -94,6 +95,10 @@ async def statistics(
                 "outlier_count": len(outliers_df),
             }
 
+        # Add context to results if provided
+        if context is not None:
+            results["context"] = context
+
         return format_json(results)
     except Exception as e:
         raise ValueError(f"Statistical analysis failed: {str(e)}")
@@ -141,6 +146,7 @@ async def pivot_table(
     columns: Annotated[str, Field(description="Column name for pivot columns")],
     values: Annotated[str, Field(description="Column name to aggregate")],
     aggfunc: Annotated[Literal["sum", "mean", "count", "min", "max"], Field(description="Aggregation function")] = "sum",
+    context: ContextParam = None,
 ) -> str:
     """Create pivot tables."""
     try:
@@ -170,7 +176,7 @@ async def pivot_table(
         result = pivot_df.to_dicts()
 
         return format_result(
-            result, {"index": index, "columns": columns, "values": values, "aggfunc": aggfunc}
+            result, {"index": index, "columns": columns, "values": values, "aggfunc": aggfunc, "context": context}
         )
     except Exception as e:
         raise ValueError(
@@ -217,6 +223,7 @@ async def correlation(
     data: Annotated[Dict[str, List[float]], Field(description="Dict of variable names to values (e.g., {'x':[1,2,3],'y':[2,4,6]})")],
     method: Annotated[Literal["pearson", "spearman"], Field(description="Correlation method")] = "pearson",
     output_format: Annotated[Literal["matrix", "pairs"], Field(description="Output format: 'matrix' or 'pairs'")] = "matrix",
+    context: ContextParam = None,
 ) -> str:
     """Calculate correlation matrices."""
     try:
@@ -249,7 +256,7 @@ async def correlation(
             result = corr_matrix
 
         return format_result(
-            result, {"method": method, "variables": list(data.keys()), "n_observations": lengths[0]}
+            result, {"method": method, "variables": list(data.keys()), "n_observations": lengths[0], "context": context}
         )
     except Exception as e:
         raise ValueError(f"Correlation analysis failed: {str(e)}")

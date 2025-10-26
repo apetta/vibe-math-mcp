@@ -7,7 +7,7 @@ from sympy import sympify, diff, integrate, limit, series, Symbol, oo, N, lambdi
 import scipy.integrate as integrate_numeric
 
 from ..server import mcp
-from ..core import format_json
+from ..core import format_json, ContextParam
 
 
 @mcp.tool(
@@ -61,6 +61,7 @@ async def derivative(
     point: Annotated[
         float | None, Field(description="Optional point for numerical evaluation of the derivative")
     ] = None,
+    context: ContextParam = None,
 ) -> str:
     """Compute symbolic derivatives using SymPy. Supports higher orders and partial derivatives. Optional numerical evaluation at a point."""
     try:
@@ -83,6 +84,10 @@ async def derivative(
             value = float(N(derivative_expr.subs(var, point)))
             result_data["value_at_point"] = value
             result_data["point"] = point
+
+        # Add context if provided
+        if context is not None:
+            result_data["context"] = context
 
         return format_json(result_data)
 
@@ -145,6 +150,7 @@ async def integral(
             description="Integration method: symbolic=exact/analytical, numerical=approximate (requires bounds)"
         ),
     ] = "symbolic",
+    context: ContextParam = None,
 ) -> str:
     """Compute integrals using SymPy (symbolic/exact) or SciPy (numerical/approximate). Supports indefinite (antiderivatives) and definite (area) integrals."""
     try:
@@ -197,6 +203,10 @@ async def integral(
 
         else:
             raise ValueError(f"Unknown method: {method}")
+
+        # Add context if provided
+        if context is not None:
+            result_data["context"] = context
 
         return format_json(result_data)
 
@@ -268,6 +278,7 @@ async def limits_series(
         Literal["+", "-", "+-"],
         Field(description="Limit direction: +=from right, -=from left, +-=both sides"),
     ] = "+-",
+    context: ContextParam = None,
 ) -> str:
     """Compute limits (lim[x→a]f(x)) and Taylor/Maclaurin series expansions using SymPy. Handles infinity, one-sided limits, removable discontinuities."""
     try:
@@ -318,6 +329,10 @@ async def limits_series(
 
         else:
             raise ValueError(f"Unknown operation: {operation}")
+
+        # Add context if provided
+        if context is not None:
+            result_data["context"] = context
 
         return format_json(result_data)
 

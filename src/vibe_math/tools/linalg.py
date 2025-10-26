@@ -9,7 +9,7 @@ from numpy.typing import NDArray
 import scipy.linalg as la
 
 from ..server import mcp
-from ..core import format_result, format_array_result, list_to_numpy, numpy_to_list
+from ..core import format_result, format_array_result, list_to_numpy, numpy_to_list, ContextParam
 
 
 @mcp.tool(
@@ -47,6 +47,7 @@ async def matrix_operations(
     operation: Annotated[Literal["multiply", "inverse", "transpose", "determinant", "trace"], Field(description="Matrix operation")],
     matrix1: Annotated[List[List[float]], Field(description="First matrix (e.g., [[1,2],[3,4]])")],
     matrix2: Annotated[Union[str, List[List[float]], None], Field(description="Second matrix for multiplication")] = None,
+    context: ContextParam = None,
 ) -> str:
     """Core matrix operations."""
     try:
@@ -66,27 +67,27 @@ async def matrix_operations(
                     f"First matrix columns must equal second matrix rows."
                 )
             result = np.dot(mat1, mat2)
-            return format_array_result(numpy_to_list(result), {"operation": operation})
+            return format_array_result(numpy_to_list(result), {"operation": operation, "context": context})
 
         elif operation == "inverse":
             if mat1.shape[0] != mat1.shape[1]:
                 raise ValueError(f"Matrix must be square for inversion. Got shape: {mat1.shape}")
             try:
                 result = la.inv(mat1)
-                return format_array_result(numpy_to_list(result), {"operation": operation})
+                return format_array_result(numpy_to_list(result), {"operation": operation, "context": context})
             except np.linalg.LinAlgError:
                 raise ValueError("Matrix is singular and cannot be inverted")
 
         elif operation == "transpose":
             result = mat1.T
-            return format_array_result(numpy_to_list(result), {"operation": operation})
+            return format_array_result(numpy_to_list(result), {"operation": operation, "context": context})
 
         elif operation == "determinant":
             if mat1.shape[0] != mat1.shape[1]:
                 raise ValueError(f"Matrix must be square for determinant. Got shape: {mat1.shape}")
             result = float(la.det(mat1))
             return format_result(
-                result, {"operation": operation, "shape": f"{mat1.shape[0]}×{mat1.shape[1]}"}
+                result, {"operation": operation, "shape": f"{mat1.shape[0]}×{mat1.shape[1]}", "context": context}
             )
 
         elif operation == "trace":
@@ -94,7 +95,7 @@ async def matrix_operations(
                 raise ValueError(f"Matrix must be square for trace. Got shape: {mat1.shape}")
             result = float(np.trace(mat1))
             return format_result(
-                result, {"operation": operation, "shape": f"{mat1.shape[0]}×{mat1.shape[1]}"}
+                result, {"operation": operation, "shape": f"{mat1.shape[0]}×{mat1.shape[1]}", "context": context}
             )
 
         else:
@@ -135,6 +136,7 @@ async def solve_linear_system(
     coefficients: Annotated[List[List[float]], Field(description="Coefficient matrix A in Ax=b system (2D list, e.g., [[2,3],[1,1]])")],
     constants: Annotated[List[float], Field(description="Constants vector b in Ax=b system (1D list, e.g., [8,3])")],
     method: Annotated[Literal["direct", "least_squares"], Field(description="Solution method: direct=exact (square systems), least_squares=overdetermined systems")] = "direct",
+    context: ContextParam = None,
 ) -> str:
     """Solve linear systems Ax=b using SciPy. Direct method for square systems, least squares for overdetermined. More stable than matrix inversion."""
     try:
@@ -164,13 +166,14 @@ async def solve_linear_system(
                 "method": method,
                 "rank": int(rank),
                 "residuals": residuals.tolist() if len(residuals) > 0 else None,
+                "context": context,
             }
             return format_result(x.tolist(), metadata)
 
         else:
             raise ValueError(f"Unknown method: {method}")
 
-        return format_result(x.tolist(), {"method": method})
+        return format_result(x.tolist(), {"method": method, "context": context})
 
     except Exception as e:
         if isinstance(e, ValueError):
@@ -212,6 +215,7 @@ LU DECOMPOSITION:
 async def matrix_decomposition(
     matrix: Annotated[List[List[float]], Field(description="Matrix to decompose as 2D nested list (e.g., [[4,2],[1,3]])")],
     decomposition: Annotated[Literal["eigen", "svd", "qr", "cholesky", "lu"], Field(description="Decomposition type: eigen=eigenvalues/vectors, svd=singular value, qr=QR, cholesky=symmetric positive definite, lu=LU factorisation")],
+    context: ContextParam = None,
 ) -> str:
     """Matrix decompositions using SciPy: eigen (λ,v), SVD (UΣV^T), QR (orthogonal×triangular), Cholesky (LL^T), LU (PLU). For analysis, solving, and numerical stability."""
     try:
@@ -232,6 +236,7 @@ async def matrix_decomposition(
                     "eigenvalues": eigenvalues.tolist(),
                     "eigenvectors": eigenvectors.tolist(),
                     "decomposition": decomposition,
+                    "context": context,
                 }
             )
 
@@ -244,6 +249,7 @@ async def matrix_decomposition(
                     "singular_values": s.tolist(),
                     "Vt": Vt.tolist(),
                     "decomposition": decomposition,
+                    "context": context,
                 }
             )
 
@@ -252,7 +258,7 @@ async def matrix_decomposition(
             R: NDArray[np.floating]
             Q, R = la.qr(mat)  # type: ignore[misc]
 
-            return format_json({"Q": Q.tolist(), "R": R.tolist(), "decomposition": decomposition})
+            return format_json({"Q": Q.tolist(), "R": R.tolist(), "decomposition": decomposition, "context": context})
 
         elif decomposition == "cholesky":
             if mat.shape[0] != mat.shape[1]:
@@ -267,7 +273,7 @@ async def matrix_decomposition(
             try:
                 L = la.cholesky(mat, lower=True)
                 return format_json(
-                    {"L": L.tolist(), "decomposition": decomposition, "note": "A = L * L^T"}
+                    {"L": L.tolist(), "decomposition": decomposition, "note": "A = L * L^T", "context": context}
                 )
             except np.linalg.LinAlgError:
                 raise ValueError("Matrix is not positive definite")
@@ -282,6 +288,7 @@ async def matrix_decomposition(
                     "U": U.tolist(),
                     "decomposition": decomposition,
                     "note": "A = P * L * U",
+                    "context": context,
                 }
             )
 
