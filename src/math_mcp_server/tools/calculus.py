@@ -10,7 +10,7 @@ from ..core import format_json
 
 
 @mcp.tool(
-    name="math_derivative",
+    name="derivative",
     description="Compute symbolic and numerical derivatives with support for higher orders and partial derivatives.",
     annotations=ToolAnnotations(
         title="Derivative Calculator",
@@ -68,7 +68,7 @@ async def derivative(
 
 
 @mcp.tool(
-    name="math_integral",
+    name="integral",
     description="Compute symbolic and numerical integrals (definite and indefinite).",
     annotations=ToolAnnotations(
         title="Integral Calculator",
@@ -162,7 +162,7 @@ async def integral(
 
 
 @mcp.tool(
-    name="math_limits_series",
+    name="limits_series",
     description="Compute limits and series expansions using SymPy.",
     annotations=ToolAnnotations(
         title="Limits and Series",

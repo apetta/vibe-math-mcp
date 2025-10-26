@@ -11,7 +11,7 @@ from ..core import format_result
 
 
 @mcp.tool(
-    name="math_calculate",
+    name="calculate",
     description="Evaluate mathematical expressions with optional variable substitution. Supports arithmetic, trigonometric, logarithmic, and algebraic functions.",
     annotations=ToolAnnotations(
         title="Mathematical Expression Calculator",
@@ -53,7 +53,7 @@ async def calculate(expression: str, variables: Optional[Dict[str, float]] = Non
 
 
 @mcp.tool(
-    name="math_percentage",
+    name="percentage",
     description="Perform percentage calculations: percentage of a value, increase, decrease, or percentage change.",
     annotations=ToolAnnotations(
         title="Percentage Calculator",
@@ -114,7 +114,7 @@ async def percentage(
 
 
 @mcp.tool(
-    name="math_round",
+    name="round",
     description="Advanced rounding operations: round, floor, ceil, or truncate values with specified decimal places.",
     annotations=ToolAnnotations(
         title="Advanced Rounding",
@@ -169,7 +169,7 @@ async def round_values(
 
 
 @mcp.tool(
-    name="math_convert_units",
+    name="convert_units",
     description="Convert between mathematical units (degrees/radians, etc.).",
     annotations=ToolAnnotations(
         title="Unit Converter",

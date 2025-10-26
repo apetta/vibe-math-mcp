@@ -12,7 +12,7 @@ from ..core import format_result, format_array_result, list_to_numpy, numpy_to_l
 
 
 @mcp.tool(
-    name="math_matrix_operations",
+    name="matrix_operations",
     description="Core matrix operations: multiply, inverse, transpose, determinant, trace.",
     annotations=ToolAnnotations(
         title="Matrix Operations",
@@ -101,7 +101,7 @@ async def matrix_operations(
 
 
 @mcp.tool(
-    name="math_solve_linear_system",
+    name="solve_linear_system",
     description="Solve systems of linear equations (Ax = b) using SciPy's optimised solver.",
     annotations=ToolAnnotations(
         title="Linear System Solver",
@@ -171,7 +171,7 @@ async def solve_linear_system(
 
 
 @mcp.tool(
-    name="math_matrix_decomposition",
+    name="matrix_decomposition",
     description="Matrix decompositions: eigenvalues/vectors, SVD, QR, Cholesky, LU.",
     annotations=ToolAnnotations(
         title="Matrix Decomposition",

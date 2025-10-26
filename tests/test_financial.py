@@ -8,7 +8,7 @@ import pytest
 async def test_financial_fv(mcp_client):
     """Test future value calculation."""
     result = await mcp_client.call_tool(
-        "math_financial_calcs", {"calculation": "fv", "rate": 0.05, "periods": 10, "payment": -100}
+        "financial_calcs", {"calculation": "fv", "rate": 0.05, "periods": 10, "payment": -100}
     )
     data = json.loads(result.content[0].text)
     # FV of annuity: PMT * ((1+r)^n - 1) / r
@@ -20,7 +20,7 @@ async def test_financial_fv(mcp_client):
 async def test_financial_pv(mcp_client):
     """Test present value calculation (annuity)."""
     result = await mcp_client.call_tool(
-        "math_financial_calcs", {"calculation": "pv", "rate": 0.05, "periods": 10, "payment": -100}
+        "financial_calcs", {"calculation": "pv", "rate": 0.05, "periods": 10, "payment": -100}
     )
     data = json.loads(result.content[0].text)
     # PV calculation returns negative value representing outflow
@@ -33,7 +33,7 @@ async def test_financial_pv_lump_sum(mcp_client):
     # What is the present value of £10,000 received in 10 years at 5% interest?
     # PV = FV / (1 + r)^n = 10000 / (1.05^10) = 6139.13
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.05, "periods": 10, "future_value": 10000}
     )
     data = json.loads(result.content[0].text)
@@ -46,7 +46,7 @@ async def test_financial_pv_lump_sum_zero_rate(mcp_client):
     """Test present value of lump sum with zero interest rate."""
     # With 0% rate, PV = FV (money doesn't change value)
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.0, "periods": 10, "future_value": 10000}
     )
     data = json.loads(result.content[0].text)
@@ -58,7 +58,7 @@ async def test_financial_pv_missing_both_params(mcp_client):
     """Test error when PV is calculated without future_value or payment."""
     with pytest.raises(Exception) as exc_info:
         await mcp_client.call_tool(
-            "math_financial_calcs",
+            "financial_calcs",
             {"calculation": "pv", "rate": 0.05, "periods": 10}
         )
     assert ("future_value" in str(exc_info.value).lower() and "payment" in str(exc_info.value).lower())
@@ -73,7 +73,7 @@ async def test_financial_pv_coupon_bond(mcp_client):
     # PV(coupons) = 30 × [(1 - 1.05^-10) / 0.05] = £231.65
     # Total = £845.56
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.05, "periods": 10, "payment": 30, "future_value": 1000}
     )
     data = json.loads(result.content[0].text)
@@ -90,7 +90,7 @@ async def test_financial_npv(mcp_client):
     """Test net present value calculation."""
     cash_flows = [-1000, 300, 400, 500, 200]
     result = await mcp_client.call_tool(
-        "math_financial_calcs", {"calculation": "npv", "rate": 0.1, "cash_flows": cash_flows}
+        "financial_calcs", {"calculation": "npv", "rate": 0.1, "cash_flows": cash_flows}
     )
     data = json.loads(result.content[0].text)
     assert "result" in data
@@ -100,7 +100,7 @@ async def test_financial_npv(mcp_client):
 async def test_compound_interest_annual(mcp_client):
     """Test compound interest with annual compounding."""
     result = await mcp_client.call_tool(
-        "math_compound_interest",
+        "compound_interest",
         {"principal": 1000, "rate": 0.05, "time": 10, "frequency": "annual"},
     )
     data = json.loads(result.content[0].text)
@@ -112,7 +112,7 @@ async def test_compound_interest_annual(mcp_client):
 async def test_compound_interest_continuous(mcp_client):
     """Test compound interest with continuous compounding."""
     result = await mcp_client.call_tool(
-        "math_compound_interest",
+        "compound_interest",
         {"principal": 1000, "rate": 0.05, "time": 10, "frequency": "continuous"},
     )
     data = json.loads(result.content[0].text)
@@ -128,7 +128,7 @@ async def test_financial_pmt_basic(mcp_client):
     """Test payment (PMT) calculation for a loan."""
     # Loan: $10,000 at 5% for 12 periods
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pmt", "rate": 0.05, "periods": 12, "present_value": -10000},
     )
     data = json.loads(result.content[0].text)
@@ -143,7 +143,7 @@ async def test_financial_pmt_zero_rate(mcp_client):
     """Test PMT calculation with zero interest rate."""
     # With 0% rate, PMT = PV / periods
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pmt", "rate": 0.0, "periods": 10, "present_value": -1000},
     )
     data = json.loads(result.content[0].text)
@@ -155,7 +155,7 @@ async def test_financial_pmt_zero_rate(mcp_client):
 async def test_financial_pmt_missing_params(mcp_client):
     """Test error when required parameters are missing for PMT."""
     with pytest.raises(Exception) as exc_info:
-        await mcp_client.call_tool("math_financial_calcs", {"calculation": "pmt", "rate": 0.05})
+        await mcp_client.call_tool("financial_calcs", {"calculation": "pmt", "rate": 0.05})
     assert "requires" in str(exc_info.value).lower()
 
 
@@ -165,7 +165,7 @@ async def test_financial_irr_simple_investment(mcp_client):
     # Initial investment of -$1000, returns of $500, $400, $300, $200
     cash_flows = [-1000, 500, 400, 300, 200]
     result = await mcp_client.call_tool(
-        "math_financial_calcs", {"calculation": "irr", "rate": 0.1, "cash_flows": cash_flows}
+        "financial_calcs", {"calculation": "irr", "rate": 0.1, "cash_flows": cash_flows}
     )
     data = json.loads(result.content[0].text)
     # IRR should be positive for profitable investment
@@ -180,7 +180,7 @@ async def test_financial_irr_complex_cash_flows(mcp_client):
     # Project with initial investment and varying returns
     cash_flows = [-5000, 1000, 1500, 2000, 2500, 1000]
     result = await mcp_client.call_tool(
-        "math_financial_calcs", {"calculation": "irr", "rate": 0.1, "cash_flows": cash_flows}
+        "financial_calcs", {"calculation": "irr", "rate": 0.1, "cash_flows": cash_flows}
     )
     data = json.loads(result.content[0].text)
     # IRR should be positive
@@ -194,7 +194,7 @@ async def test_financial_irr_negative_return(mcp_client):
     # Investment that loses money
     cash_flows = [-1000, 100, 150, 200, 100]
     result = await mcp_client.call_tool(
-        "math_financial_calcs", {"calculation": "irr", "rate": 0.1, "cash_flows": cash_flows}
+        "financial_calcs", {"calculation": "irr", "rate": 0.1, "cash_flows": cash_flows}
     )
     data = json.loads(result.content[0].text)
     # IRR should be negative for unprofitable investment
@@ -206,7 +206,7 @@ async def test_financial_irr_insufficient_cash_flows(mcp_client):
     """Test error when IRR has insufficient cash flows."""
     with pytest.raises(Exception) as exc_info:
         await mcp_client.call_tool(
-            "math_financial_calcs", {"calculation": "irr", "rate": 0.1, "cash_flows": [-1000]}
+            "financial_calcs", {"calculation": "irr", "rate": 0.1, "cash_flows": [-1000]}
         )
     assert "at least 2" in str(exc_info.value).lower()
 
@@ -218,7 +218,7 @@ async def test_financial_irr_convergence(mcp_client):
     # Initial investment of $10,000, returns of $3,000 for 5 years
     cash_flows = [-10000, 3000, 3000, 3000, 3000, 3000]
     result = await mcp_client.call_tool(
-        "math_financial_calcs", {"calculation": "irr", "rate": 0.1, "cash_flows": cash_flows}
+        "financial_calcs", {"calculation": "irr", "rate": 0.1, "cash_flows": cash_flows}
     )
     data = json.loads(result.content[0].text)
     # Expected IRR: 15.24% (from audit and verified calculation)
@@ -230,7 +230,7 @@ async def test_financial_fv_zero_rate(mcp_client):
     """Test future value calculation with zero interest rate."""
     # With 0% rate, FV = PV + (PMT × periods)
     result = await mcp_client.call_tool(
-        "math_financial_calcs", {"calculation": "fv", "rate": 0.0, "periods": 10, "payment": -100}
+        "financial_calcs", {"calculation": "fv", "rate": 0.0, "periods": 10, "payment": -100}
     )
     data = json.loads(result.content[0].text)
     # FV = 100 × 10 = 1000
@@ -242,7 +242,7 @@ async def test_financial_pv_zero_rate(mcp_client):
     """Test present value calculation with zero interest rate."""
     # With 0% rate, PV = PMT × periods
     result = await mcp_client.call_tool(
-        "math_financial_calcs", {"calculation": "pv", "rate": 0.0, "periods": 10, "payment": -100}
+        "financial_calcs", {"calculation": "pv", "rate": 0.0, "periods": 10, "payment": -100}
     )
     data = json.loads(result.content[0].text)
     # PV = 100 × 10 = 1000
@@ -253,7 +253,7 @@ async def test_financial_pv_zero_rate(mcp_client):
 async def test_financial_npv_missing_cash_flows(mcp_client):
     """Test error when NPV is calculated without cash flows."""
     with pytest.raises(Exception) as exc_info:
-        await mcp_client.call_tool("math_financial_calcs", {"calculation": "npv", "rate": 0.1})
+        await mcp_client.call_tool("financial_calcs", {"calculation": "npv", "rate": 0.1})
     assert "requires" in str(exc_info.value).lower() or "cash_flows" in str(exc_info.value).lower()
 
 
@@ -261,7 +261,7 @@ async def test_financial_npv_missing_cash_flows(mcp_client):
 async def test_compound_interest_semi_annual(mcp_client):
     """Test compound interest with semi-annual compounding."""
     result = await mcp_client.call_tool(
-        "math_compound_interest",
+        "compound_interest",
         {"principal": 1000, "rate": 0.06, "time": 5, "frequency": "semi-annual"},
     )
     data = json.loads(result.content[0].text)
@@ -274,7 +274,7 @@ async def test_compound_interest_semi_annual(mcp_client):
 async def test_compound_interest_quarterly(mcp_client):
     """Test compound interest with quarterly compounding."""
     result = await mcp_client.call_tool(
-        "math_compound_interest",
+        "compound_interest",
         {"principal": 1000, "rate": 0.08, "time": 3, "frequency": "quarterly"},
     )
     data = json.loads(result.content[0].text)
@@ -287,7 +287,7 @@ async def test_compound_interest_quarterly(mcp_client):
 async def test_compound_interest_monthly(mcp_client):
     """Test compound interest with monthly compounding."""
     result = await mcp_client.call_tool(
-        "math_compound_interest",
+        "compound_interest",
         {"principal": 5000, "rate": 0.05, "time": 2, "frequency": "monthly"},
     )
     data = json.loads(result.content[0].text)
@@ -300,7 +300,7 @@ async def test_compound_interest_monthly(mcp_client):
 async def test_compound_interest_daily(mcp_client):
     """Test compound interest with daily compounding."""
     result = await mcp_client.call_tool(
-        "math_compound_interest",
+        "compound_interest",
         {"principal": 2000, "rate": 0.04, "time": 1, "frequency": "daily"},
     )
     data = json.loads(result.content[0].text)
@@ -321,7 +321,7 @@ async def test_compound_interest_daily(mcp_client):
 async def test_financial_fv_sales_growth(mcp_client):
     """Test FV: $100M at 8% for 10 years (Problem 1.1)."""
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "fv", "rate": 0.08, "periods": 10, "present_value": -100, "payment": 0}
     )
     data = json.loads(result.content[0].text)
@@ -333,7 +333,7 @@ async def test_financial_fv_sales_growth(mcp_client):
 async def test_financial_pv_government_bond(mcp_client):
     """Test PV: $1000 in 3 years at 4% (Problem 1.2)."""
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.04, "periods": 3, "future_value": 1000, "payment": 0}
     )
     data = json.loads(result.content[0].text)
@@ -345,7 +345,7 @@ async def test_financial_pv_government_bond(mcp_client):
 async def test_financial_rate_treasury_bond(mcp_client):
     """Test rate solving: $613.81 → $1000 in 10 years (Problem 1.3)."""
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "rate", "periods": 10, "present_value": -613.81, "future_value": 1000}
     )
     data = json.loads(result.content[0].text)
@@ -360,7 +360,7 @@ async def test_financial_rate_treasury_bond(mcp_client):
 async def test_financial_pv_annuity_payment(mcp_client):
     """Test PV of annuity: $1000/year for 5 years at 6% (Problem 2.1)."""
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.06, "periods": 5, "payment": -1000, "future_value": 0}
     )
     data = json.loads(result.content[0].text)
@@ -372,7 +372,7 @@ async def test_financial_pv_annuity_payment(mcp_client):
 async def test_financial_pmt_withdrawal(mcp_client):
     """Test PMT: Withdraw from $200k at 6% over 15 years (Problem 2.2)."""
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pmt", "rate": 0.06, "periods": 15, "present_value": -200000, "future_value": 0}
     )
     data = json.loads(result.content[0].text)
@@ -384,7 +384,7 @@ async def test_financial_pmt_withdrawal(mcp_client):
 async def test_financial_pmt_mortgage(mcp_client):
     """Test PMT: $190k mortgage at 7%/12 for 360 months (Problem 2.3)."""
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pmt", "rate": 0.07/12, "periods": 360, "present_value": -190000, "future_value": 0}
     )
     data = json.loads(result.content[0].text)
@@ -399,7 +399,7 @@ async def test_financial_pmt_mortgage(mcp_client):
 async def test_financial_pv_zero_coupon_bond_100k(mcp_client):
     """Test PV: Zero-coupon bond $100k at 10% for 4 years (Problem 3.1)."""
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.10, "periods": 4, "future_value": 100000, "payment": 0}
     )
     data = json.loads(result.content[0].text)
@@ -411,7 +411,7 @@ async def test_financial_pv_zero_coupon_bond_100k(mcp_client):
 async def test_financial_pv_coupon_bond_annual(mcp_client):
     """Test PV: $100k bond, $7k coupons, 9% yield, 15 years (Problem 3.2)."""
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.09, "periods": 15, "payment": 7000, "future_value": 100000}
     )
     data = json.loads(result.content[0].text)
@@ -423,7 +423,7 @@ async def test_financial_pv_coupon_bond_annual(mcp_client):
 async def test_financial_pv_coupon_bond_semiannual(mcp_client):
     """Test PV: $100k bond, $4k semi-annual coupons, 3.5% rate, 10 periods (Problem 3.3)."""
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.07/2, "periods": 10, "payment": 4000, "future_value": 100000}
     )
     data = json.loads(result.content[0].text)
@@ -437,7 +437,7 @@ async def test_financial_pv_bond_discount(mcp_client):
     """Test PV: $1000 bond, 5% coupon, 6% yield, semi-annual (Problem 3.4)."""
     # Semi-annual: $25 coupon, 20 periods, 3% per period
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.03, "periods": 20, "payment": 25, "future_value": 1000}
     )
     data = json.loads(result.content[0].text)
@@ -450,7 +450,7 @@ async def test_financial_pv_openstax_bond(mcp_client):
     """Test PV: OpenStax 4% coupon bond, 5% YTM, semi-annual (Problem 3.5)."""
     # Semi-annual: $20 coupon, 30 periods, 2.5% per period
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.025, "periods": 30, "payment": 20, "future_value": 1000}
     )
     data = json.loads(result.content[0].text)
@@ -466,7 +466,7 @@ async def test_financial_npv_uneven_cashflows(mcp_client):
     """Test NPV: 10-year uneven cash flow stream at 8% (Problem 4.1)."""
     cash_flows = [0, 10000, 10000, 10000, 12000, 12000, 12000, 12000, 15000, 15000, 15000]
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "npv", "rate": 0.08, "cash_flows": cash_flows}
     )
     data = json.loads(result.content[0].text)
@@ -479,7 +479,7 @@ async def test_financial_rate_savings_from_zero(mcp_client):
     """Test rate: Savings from zero with quarterly contributions (Problem: PV=0 regression)."""
     # Start with £0, save £30k quarterly, reach £550k in 4 years (16 quarters)
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "rate", "periods": 16, "payment": -30000, "present_value": 0, "future_value": 550000}
     )
     data = json.loads(result.content[0].text)
@@ -494,7 +494,7 @@ async def test_financial_rate_annuity_due(mcp_client):
     """Test rate: Annuity due with payments at beginning (when='begin')."""
     # SmartChoice laptop: $399 cash or $59.88/month in advance for 12 months
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "rate", "periods": 12, "payment": 59.88, "present_value": -399, "future_value": 0, "when": "begin"}
     )
     data = json.loads(result.content[0].text)
@@ -509,7 +509,7 @@ async def test_financial_pmt_annuity_due(mcp_client):
     """Test PMT: Payment calculation with annuity due (when='begin')."""
     # Lease with payments at start of month
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pmt", "rate": 0.005, "periods": 36, "present_value": -20000, "future_value": 0, "when": "begin"}
     )
     data = json.loads(result.content[0].text)
@@ -541,7 +541,7 @@ async def test_financial_deferred_annuity_cfa(mcp_client):
     """
     # Step 1: PV at year 3 (when annuity starts)
     result_at_start = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.08, "periods": 4, "payment": -20000, "future_value": 0}
     )
     data_at_start = json.loads(result_at_start.content[0].text)
@@ -549,7 +549,7 @@ async def test_financial_deferred_annuity_cfa(mcp_client):
 
     # Step 2: Discount back to today
     result_today = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.08, "periods": 3, "future_value": -data_at_start["result"], "payment": 0}
     )
     data_today = json.loads(result_today.content[0].text)
@@ -571,7 +571,7 @@ async def test_financial_negative_interest_rate_swiss_bond(mcp_client):
     Note: PV > FV when rate is negative
     """
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": -0.0008, "periods": 15, "future_value": 100, "payment": 0}
     )
     data = json.loads(result.content[0].text)
@@ -598,7 +598,7 @@ async def test_financial_annuity_due_cfa_problem(mcp_client):
     Answer: B) 1389
     """
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.04, "periods": 5, "payment": -300, "future_value": 0, "when": "begin"}
     )
     data = json.loads(result.content[0].text)
@@ -630,7 +630,7 @@ async def test_financial_balloon_payment_mortgage(mcp_client):
     """
     # Step 1: Get monthly payment
     result_pmt = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pmt", "rate": 0.07/12, "periods": 360, "present_value": -100000, "future_value": 0}
     )
     data_pmt = json.loads(result_pmt.content[0].text)
@@ -638,7 +638,7 @@ async def test_financial_balloon_payment_mortgage(mcp_client):
 
     # Step 2: Calculate balloon (remaining balance after 60 payments)
     result_balloon = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "fv", "rate": 0.07/12, "periods": 60, "payment": 665.30, "present_value": -100000}
     )
     data_balloon = json.loads(result_balloon.content[0].text)
@@ -662,7 +662,7 @@ async def test_financial_deferred_annuity_changing_rates(mcp_client):
     """
     # Step 1: PV at year 5 (one year before first payment) using 15% rate
     result_at_yr5 = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.15, "periods": 15, "payment": -750, "future_value": 0}
     )
     data_at_yr5 = json.loads(result_at_yr5.content[0].text)
@@ -671,7 +671,7 @@ async def test_financial_deferred_annuity_changing_rates(mcp_client):
 
     # Step 2: Discount back 5 years at 12%
     result_today = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.12, "periods": 5, "future_value": -data_at_yr5["result"], "payment": 0}
     )
     data_today = json.loads(result_today.content[0].text)
@@ -694,14 +694,14 @@ async def test_financial_mixed_cashflows_cfa(mcp_client):
     # Annuity component (3 payments of 20,000 received)
     # Use positive payment since we RECEIVE these cash flows
     result_annuity = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.08, "periods": 3, "payment": 20000, "future_value": 0}
     )
     data_annuity = json.loads(result_annuity.content[0].text)
 
     # Lump sum component (30,000 at year 4 received)
     result_lumpsum = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.08, "periods": 4, "future_value": 30000, "payment": 0}
     )
     data_lumpsum = json.loads(result_lumpsum.content[0].text)
@@ -727,7 +727,7 @@ async def test_financial_bond_semiannual_cfa(mcp_client):
     CPT PV = -1,018.81
     """
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.025, "periods": 4, "payment": 30, "future_value": 1000}
     )
     data = json.loads(result.content[0].text)
@@ -750,7 +750,7 @@ async def test_financial_bond_at_discount_cfa(mcp_client):
     CPT PV = -95.35
     """
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.0425, "periods": 20, "payment": 3.9, "future_value": 100}
     )
     data = json.loads(result.content[0].text)
@@ -769,7 +769,7 @@ async def test_financial_zero_coupon_fv_cfa(mcp_client):
     CPT FV = 10,883.91
     """
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "fv", "rate": 0.08, "periods": 4, "present_value": -8000, "payment": 0}
     )
     data = json.loads(result.content[0].text)
@@ -787,7 +787,7 @@ async def test_financial_ordinary_annuity_cfa_validation(mcp_client):
     This is a validation test to verify our calculations match CFA standards.
     """
     result = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.05, "periods": 10, "payment": -2000, "future_value": 0, "when": "end"}
     )
     data = json.loads(result.content[0].text)
@@ -812,7 +812,7 @@ async def test_financial_perpetuity_monthly_cfa(mcp_client):
     PV = Payment / rate = 1,000 / 0.005 = $200,000
     """
     result = await mcp_client.call_tool(
-        "math_perpetuity",
+        "perpetuity",
         {"payment": 1000, "rate": 0.005}
     )
     data = json.loads(result.content[0].text)
@@ -838,7 +838,7 @@ async def test_financial_perpetuity_quarterly(mcp_client):
     PV = 5 / 0.0175 = $285.71
     """
     result = await mcp_client.call_tool(
-        "math_perpetuity",
+        "perpetuity",
         {"payment": 5, "rate": 0.0175}
     )
     data = json.loads(result.content[0].text)
@@ -869,14 +869,14 @@ async def test_financial_growing_annuity_salary(mcp_client):
     """
     # Salary component
     result_salary = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.12, "periods": 25, "payment": -45000, "growth_rate": 0.035}
     )
     data_salary = json.loads(result_salary.content[0].text)
 
     # Bonus component (10% of salary)
     result_bonus = await mcp_client.call_tool(
-        "math_financial_calcs",
+        "financial_calcs",
         {"calculation": "pv", "rate": 0.12, "periods": 25, "payment": -4500, "growth_rate": 0.035}
     )
     data_bonus = json.loads(result_bonus.content[0].text)

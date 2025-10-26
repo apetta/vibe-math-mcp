@@ -9,7 +9,7 @@ from ..core import format_result, format_json
 
 
 @mcp.tool(
-    name="math_statistics",
+    name="statistics",
     description="Comprehensive statistical analysis: descriptive statistics, quartiles, outlier detection.",
     annotations=ToolAnnotations(
         title="Statistical Analysis",
@@ -88,7 +88,7 @@ async def statistics(
 
 
 @mcp.tool(
-    name="math_pivot_table",
+    name="pivot_table",
     description="Create pivot tables from tabular data with aggregation functions.",
     annotations=ToolAnnotations(
         title="Pivot Table",
@@ -157,7 +157,7 @@ async def pivot_table(
 
 
 @mcp.tool(
-    name="math_correlation",
+    name="correlation",
     description="Calculate correlation matrices between multiple variables (Pearson or Spearman).",
     annotations=ToolAnnotations(
         title="Correlation Analysis",

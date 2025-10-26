@@ -10,7 +10,7 @@ from ..core import format_result, format_array_result, list_to_polars, polars_to
 
 
 @mcp.tool(
-    name="math_array_operations",
+    name="array_operations",
     description="Perform element-wise operations on arrays (add, subtract, multiply, divide, power).",
     annotations=ToolAnnotations(
         title="Array Operations",
@@ -82,7 +82,7 @@ async def array_operations(
 
 
 @mcp.tool(
-    name="math_array_statistics",
+    name="array_statistics",
     description="Calculate statistical measures on arrays (mean, median, std, min, max, sum) with optional axis selection.",
     annotations=ToolAnnotations(
         title="Array Statistics",
@@ -167,7 +167,7 @@ async def array_statistics(
 
 
 @mcp.tool(
-    name="math_array_aggregate",
+    name="array_aggregate",
     description="Perform aggregation operations: sumproduct, weighted average, or dot product.",
     annotations=ToolAnnotations(
         title="Array Aggregation",
@@ -234,7 +234,7 @@ async def array_aggregate(
 
 
 @mcp.tool(
-    name="math_array_transform",
+    name="array_transform",
     description="Transform arrays: normalise, standardise, min-max scale, or log transform.",
     annotations=ToolAnnotations(
         title="Array Transformation",

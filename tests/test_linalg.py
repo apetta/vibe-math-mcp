@@ -8,7 +8,7 @@ import pytest
 async def test_matrix_multiply(mcp_client, sample_array_2x2):
     """Test matrix multiplication."""
     result = await mcp_client.call_tool(
-        "math_matrix_operations",
+        "matrix_operations",
         {"operation": "multiply", "matrix1": sample_array_2x2, "matrix2": sample_array_2x2},
     )
     data = json.loads(result.content[0].text)
@@ -20,7 +20,7 @@ async def test_matrix_multiply(mcp_client, sample_array_2x2):
 async def test_matrix_transpose(mcp_client, sample_array_2x2):
     """Test matrix transpose."""
     result = await mcp_client.call_tool(
-        "math_matrix_operations", {"operation": "transpose", "matrix1": sample_array_2x2}
+        "matrix_operations", {"operation": "transpose", "matrix1": sample_array_2x2}
     )
     data = json.loads(result.content[0].text)
     assert data["values"] == [[1.0, 3.0], [2.0, 4.0]]
@@ -30,7 +30,7 @@ async def test_matrix_transpose(mcp_client, sample_array_2x2):
 async def test_matrix_determinant(mcp_client, sample_array_2x2):
     """Test matrix determinant."""
     result = await mcp_client.call_tool(
-        "math_matrix_operations", {"operation": "determinant", "matrix1": sample_array_2x2}
+        "matrix_operations", {"operation": "determinant", "matrix1": sample_array_2x2}
     )
     data = json.loads(result.content[0].text)
     # det([[1,2],[3,4]]) = 1*4 - 2*3 = -2
@@ -41,7 +41,7 @@ async def test_matrix_determinant(mcp_client, sample_array_2x2):
 async def test_matrix_trace(mcp_client, sample_array_2x2):
     """Test matrix trace."""
     result = await mcp_client.call_tool(
-        "math_matrix_operations", {"operation": "trace", "matrix1": sample_array_2x2}
+        "matrix_operations", {"operation": "trace", "matrix1": sample_array_2x2}
     )
     data = json.loads(result.content[0].text)
     # trace([[1,2],[3,4]]) = 1 + 4 = 5
@@ -56,7 +56,7 @@ async def test_solve_linear_system(mcp_client):
     coefficients = [[2, 3], [1, 1]]
     constants = [8, 3]
     result = await mcp_client.call_tool(
-        "math_solve_linear_system",
+        "solve_linear_system",
         {"coefficients": coefficients, "constants": constants, "method": "direct"},
     )
     data = json.loads(result.content[0].text)
@@ -69,7 +69,7 @@ async def test_solve_linear_system(mcp_client):
 async def test_matrix_decomposition_svd(mcp_client, sample_array_2x2):
     """Test SVD decomposition."""
     result = await mcp_client.call_tool(
-        "math_matrix_decomposition", {"matrix": sample_array_2x2, "decomposition": "svd"}
+        "matrix_decomposition", {"matrix": sample_array_2x2, "decomposition": "svd"}
     )
     data = json.loads(result.content[0].text)
     assert "U" in data
@@ -81,7 +81,7 @@ async def test_matrix_decomposition_svd(mcp_client, sample_array_2x2):
 async def test_matrix_decomposition_qr(mcp_client, sample_array_2x2):
     """Test QR decomposition."""
     result = await mcp_client.call_tool(
-        "math_matrix_decomposition", {"matrix": sample_array_2x2, "decomposition": "qr"}
+        "matrix_decomposition", {"matrix": sample_array_2x2, "decomposition": "qr"}
     )
     data = json.loads(result.content[0].text)
     assert "Q" in data
@@ -93,7 +93,7 @@ async def test_matrix_inverse_2x2(mcp_client):
     """Test 2x2 matrix inversion."""
     matrix = [[4.0, 7.0], [2.0, 6.0]]
     result = await mcp_client.call_tool(
-        "math_matrix_operations", {"operation": "inverse", "matrix1": matrix}
+        "matrix_operations", {"operation": "inverse", "matrix1": matrix}
     )
     data = json.loads(result.content[0].text)
     # Verify inverse exists and has correct shape
@@ -108,7 +108,7 @@ async def test_matrix_inverse_3x3(mcp_client):
     """Test 3x3 matrix inversion."""
     matrix = [[1.0, 2.0, 3.0], [0.0, 1.0, 4.0], [5.0, 6.0, 0.0]]
     result = await mcp_client.call_tool(
-        "math_matrix_operations", {"operation": "inverse", "matrix1": matrix}
+        "matrix_operations", {"operation": "inverse", "matrix1": matrix}
     )
     data = json.loads(result.content[0].text)
     # Verify inverse has correct shape
@@ -123,7 +123,7 @@ async def test_matrix_inverse_singular(mcp_client):
     matrix = [[1.0, 2.0], [2.0, 4.0]]
     with pytest.raises(Exception) as exc_info:
         await mcp_client.call_tool(
-            "math_matrix_operations", {"operation": "inverse", "matrix1": matrix}
+            "matrix_operations", {"operation": "inverse", "matrix1": matrix}
         )
     assert "singular" in str(exc_info.value).lower()
 
@@ -134,7 +134,7 @@ async def test_matrix_inverse_non_square(mcp_client):
     matrix = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
     with pytest.raises(Exception) as exc_info:
         await mcp_client.call_tool(
-            "math_matrix_operations", {"operation": "inverse", "matrix1": matrix}
+            "matrix_operations", {"operation": "inverse", "matrix1": matrix}
         )
     assert "square" in str(exc_info.value).lower()
 
@@ -146,7 +146,7 @@ async def test_matrix_multiply_incompatible_shapes(mcp_client):
     matrix2 = [[1.0, 2.0, 3.0]]  # 1x3
     with pytest.raises(Exception) as exc_info:
         await mcp_client.call_tool(
-            "math_matrix_operations",
+            "matrix_operations",
             {"operation": "multiply", "matrix1": matrix1, "matrix2": matrix2},
         )
     assert "Incompatible" in str(exc_info.value) or "shape" in str(exc_info.value).lower()
@@ -157,7 +157,7 @@ async def test_matrix_multiply_missing_matrix2(mcp_client, sample_array_2x2):
     """Test error when matrix2 is missing for multiplication."""
     with pytest.raises(Exception) as exc_info:
         await mcp_client.call_tool(
-            "math_matrix_operations", {"operation": "multiply", "matrix1": sample_array_2x2}
+            "matrix_operations", {"operation": "multiply", "matrix1": sample_array_2x2}
         )
     assert "requires matrix2" in str(exc_info.value).lower()
 
@@ -168,7 +168,7 @@ async def test_matrix_determinant_non_square(mcp_client):
     matrix = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
     with pytest.raises(Exception) as exc_info:
         await mcp_client.call_tool(
-            "math_matrix_operations", {"operation": "determinant", "matrix1": matrix}
+            "matrix_operations", {"operation": "determinant", "matrix1": matrix}
         )
     assert "square" in str(exc_info.value).lower()
 
@@ -179,7 +179,7 @@ async def test_matrix_trace_non_square(mcp_client):
     matrix = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
     with pytest.raises(Exception) as exc_info:
         await mcp_client.call_tool(
-            "math_matrix_operations", {"operation": "trace", "matrix1": matrix}
+            "matrix_operations", {"operation": "trace", "matrix1": matrix}
         )
     assert "square" in str(exc_info.value).lower()
 
@@ -191,7 +191,7 @@ async def test_solve_linear_system_dimension_mismatch(mcp_client):
     constants = [5.0, 6.0, 7.0]  # Too many constants
     with pytest.raises(Exception) as exc_info:
         await mcp_client.call_tool(
-            "math_solve_linear_system",
+            "solve_linear_system",
             {"coefficients": coefficients, "constants": constants, "method": "direct"},
         )
     assert "dimension" in str(exc_info.value).lower() or "incompatible" in str(exc_info.value).lower()
@@ -204,7 +204,7 @@ async def test_solve_linear_system_non_square_direct(mcp_client):
     constants = [7.0, 8.0, 9.0]
     with pytest.raises(Exception) as exc_info:
         await mcp_client.call_tool(
-            "math_solve_linear_system",
+            "solve_linear_system",
             {"coefficients": coefficients, "constants": constants, "method": "direct"},
         )
     assert "square" in str(exc_info.value).lower() or "least_squares" in str(exc_info.value)
@@ -218,7 +218,7 @@ async def test_solve_linear_system_singular(mcp_client):
     constants = [3.0, 6.0]
     with pytest.raises(Exception) as exc_info:
         await mcp_client.call_tool(
-            "math_solve_linear_system",
+            "solve_linear_system",
             {"coefficients": coefficients, "constants": constants, "method": "direct"},
         )
     assert "singular" in str(exc_info.value).lower() or "poorly conditioned" in str(exc_info.value).lower()
@@ -229,7 +229,7 @@ async def test_matrix_decomposition_eigen_2x2(mcp_client):
     """Test eigenvalue decomposition of 2x2 matrix."""
     matrix = [[4.0, 2.0], [1.0, 3.0]]
     result = await mcp_client.call_tool(
-        "math_matrix_decomposition", {"matrix": matrix, "decomposition": "eigen"}
+        "matrix_decomposition", {"matrix": matrix, "decomposition": "eigen"}
     )
     data = json.loads(result.content[0].text)
     assert "eigenvalues" in data
@@ -242,7 +242,7 @@ async def test_matrix_decomposition_eigen_3x3(mcp_client):
     """Test eigenvalue decomposition of 3x3 matrix."""
     matrix = [[1.0, 2.0, 3.0], [0.0, 4.0, 5.0], [0.0, 0.0, 6.0]]
     result = await mcp_client.call_tool(
-        "math_matrix_decomposition", {"matrix": matrix, "decomposition": "eigen"}
+        "matrix_decomposition", {"matrix": matrix, "decomposition": "eigen"}
     )
     data = json.loads(result.content[0].text)
     assert len(data["eigenvalues"]) == 3
@@ -255,7 +255,7 @@ async def test_matrix_decomposition_eigen_non_square(mcp_client):
     matrix = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
     with pytest.raises(Exception) as exc_info:
         await mcp_client.call_tool(
-            "math_matrix_decomposition", {"matrix": matrix, "decomposition": "eigen"}
+            "matrix_decomposition", {"matrix": matrix, "decomposition": "eigen"}
         )
     assert "square" in str(exc_info.value).lower()
 
@@ -266,7 +266,7 @@ async def test_matrix_decomposition_cholesky_positive_definite(mcp_client):
     # Symmetric positive definite matrix
     matrix = [[4.0, 2.0], [2.0, 3.0]]
     result = await mcp_client.call_tool(
-        "math_matrix_decomposition", {"matrix": matrix, "decomposition": "cholesky"}
+        "matrix_decomposition", {"matrix": matrix, "decomposition": "cholesky"}
     )
     data = json.loads(result.content[0].text)
     assert "L" in data
@@ -279,7 +279,7 @@ async def test_matrix_decomposition_cholesky_non_symmetric(mcp_client):
     matrix = [[4.0, 1.0], [2.0, 3.0]]
     with pytest.raises(Exception) as exc_info:
         await mcp_client.call_tool(
-            "math_matrix_decomposition", {"matrix": matrix, "decomposition": "cholesky"}
+            "matrix_decomposition", {"matrix": matrix, "decomposition": "cholesky"}
         )
     assert "symmetric" in str(exc_info.value).lower()
 
@@ -291,7 +291,7 @@ async def test_matrix_decomposition_cholesky_not_positive_definite(mcp_client):
     matrix = [[1.0, 2.0], [2.0, 1.0]]
     with pytest.raises(Exception) as exc_info:
         await mcp_client.call_tool(
-            "math_matrix_decomposition", {"matrix": matrix, "decomposition": "cholesky"}
+            "matrix_decomposition", {"matrix": matrix, "decomposition": "cholesky"}
         )
     assert "positive definite" in str(exc_info.value).lower()
 
@@ -301,7 +301,7 @@ async def test_matrix_decomposition_lu_2x2(mcp_client):
     """Test LU decomposition of 2x2 matrix."""
     matrix = [[3.0, 1.0], [6.0, 4.0]]
     result = await mcp_client.call_tool(
-        "math_matrix_decomposition", {"matrix": matrix, "decomposition": "lu"}
+        "matrix_decomposition", {"matrix": matrix, "decomposition": "lu"}
     )
     data = json.loads(result.content[0].text)
     assert "P" in data
@@ -315,7 +315,7 @@ async def test_matrix_decomposition_lu_3x3(mcp_client):
     """Test LU decomposition of 3x3 matrix."""
     matrix = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 10.0]]
     result = await mcp_client.call_tool(
-        "math_matrix_decomposition", {"matrix": matrix, "decomposition": "lu"}
+        "matrix_decomposition", {"matrix": matrix, "decomposition": "lu"}
     )
     data = json.loads(result.content[0].text)
     assert len(data["P"]) == 3

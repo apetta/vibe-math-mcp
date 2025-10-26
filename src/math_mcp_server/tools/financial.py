@@ -11,7 +11,7 @@ from ..core import format_result
 
 
 @mcp.tool(
-    name="math_financial_calcs",
+    name="financial_calcs",
     description="Financial calculations: present value (PV), future value (FV), payment (PMT), IRR, NPV. Supports growing annuities.",
     annotations=ToolAnnotations(
         title="Financial Calculations",
@@ -290,7 +290,7 @@ async def financial_calcs(
 
 
 @mcp.tool(
-    name="math_compound_interest",
+    name="compound_interest",
     description="Calculate compound interest with various compounding frequencies.",
     annotations=ToolAnnotations(
         title="Compound Interest",
@@ -360,7 +360,7 @@ async def compound_interest(
 
 
 @mcp.tool(
-    name="math_perpetuity",
+    name="perpetuity",
     description="Calculate present value of perpetuities (infinite periodic payments).",
     annotations=ToolAnnotations(
         title="Perpetuity Calculations",

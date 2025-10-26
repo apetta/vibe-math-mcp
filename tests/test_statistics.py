@@ -8,7 +8,7 @@ import pytest
 async def test_statistics_describe(mcp_client, sample_data_list):
     """Test descriptive statistics."""
     result = await mcp_client.call_tool(
-        "math_statistics", {"data": sample_data_list, "analyses": ["describe"]}
+        "statistics", {"data": sample_data_list, "analyses": ["describe"]}
     )
     data = json.loads(result.content[0].text)
     assert data["describe"]["count"] == 10
@@ -21,7 +21,7 @@ async def test_statistics_describe(mcp_client, sample_data_list):
 async def test_statistics_quartiles(mcp_client, sample_data_list):
     """Test quartile calculation."""
     result = await mcp_client.call_tool(
-        "math_statistics", {"data": sample_data_list, "analyses": ["quartiles"]}
+        "statistics", {"data": sample_data_list, "analyses": ["quartiles"]}
     )
     data = json.loads(result.content[0].text)
     assert "Q1" in data["quartiles"]
@@ -35,7 +35,7 @@ async def test_statistics_outliers(mcp_client):
     """Test outlier detection."""
     data_with_outliers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 100]
     result = await mcp_client.call_tool(
-        "math_statistics", {"data": data_with_outliers, "analyses": ["outliers"]}
+        "statistics", {"data": data_with_outliers, "analyses": ["outliers"]}
     )
     data = json.loads(result.content[0].text)
     assert len(data["outliers"]["outlier_values"]) > 0
@@ -51,7 +51,7 @@ async def test_pivot_table(mcp_client):
         {"region": "South", "product": "B", "sales": 250},
     ]
     result = await mcp_client.call_tool(
-        "math_pivot_table",
+        "pivot_table",
         {
             "data": data,
             "index": "region",
@@ -73,7 +73,7 @@ async def test_correlation_pearson(mcp_client):
         "z": [1.0, 1.0, 1.0, 1.0, 1.0],
     }
     result = await mcp_client.call_tool(
-        "math_correlation", {"data": data, "method": "pearson", "output_format": "matrix"}
+        "correlation", {"data": data, "method": "pearson", "output_format": "matrix"}
     )
     result_data = json.loads(result.content[0].text)
     # x and y should be perfectly correlated
@@ -90,7 +90,7 @@ async def test_correlation_spearman(mcp_client):
         "y": [1.0, 4.0, 9.0, 16.0, 25.0],  # Non-linear but monotonic
     }
     result = await mcp_client.call_tool(
-        "math_correlation", {"data": data, "method": "spearman", "output_format": "matrix"}
+        "correlation", {"data": data, "method": "spearman", "output_format": "matrix"}
     )
     result_data = json.loads(result.content[0].text)
     # Spearman correlation should be perfect for monotonic relationship
@@ -106,7 +106,7 @@ async def test_correlation_pairs_format(mcp_client):
         "c": [3.0, 6.0, 9.0],
     }
     result = await mcp_client.call_tool(
-        "math_correlation", {"data": data, "method": "pearson", "output_format": "pairs"}
+        "correlation", {"data": data, "method": "pearson", "output_format": "pairs"}
     )
     result_data = json.loads(result.content[0].text)
     # Should return pairwise correlations
@@ -124,7 +124,7 @@ async def test_correlation_unequal_lengths(mcp_client):
         "y": [1.0, 2.0],  # Different length
     }
     with pytest.raises(Exception) as exc_info:
-        await mcp_client.call_tool("math_correlation", {"data": data, "method": "pearson"})
+        await mcp_client.call_tool("correlation", {"data": data, "method": "pearson"})
     # Error should mention height/shape mismatch or same number of observations
     error_msg = str(exc_info.value).lower()
     assert ("same number" in error_msg or "height" in error_msg or "shape" in error_msg)
@@ -139,7 +139,7 @@ async def test_pivot_table_mean_aggfunc(mcp_client):
         {"region": "South", "product": "A", "sales": 200},
     ]
     result = await mcp_client.call_tool(
-        "math_pivot_table",
+        "pivot_table",
         {
             "data": data,
             "index": "region",
@@ -161,7 +161,7 @@ async def test_pivot_table_count_aggfunc(mcp_client):
         {"region": "North", "product": "B", "sales": 200},
     ]
     result = await mcp_client.call_tool(
-        "math_pivot_table",
+        "pivot_table",
         {
             "data": data,
             "index": "region",
@@ -182,7 +182,7 @@ async def test_pivot_table_missing_column(mcp_client):
     ]
     with pytest.raises(Exception) as exc_info:
         await mcp_client.call_tool(
-            "math_pivot_table",
+            "pivot_table",
             {
                 "data": data,
                 "index": "region",
@@ -200,7 +200,7 @@ async def test_statistics_combined_analyses(mcp_client):
     """Test multiple analyses at once."""
     data = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 100.0]
     result = await mcp_client.call_tool(
-        "math_statistics", {"data": data, "analyses": ["describe", "quartiles", "outliers"]}
+        "statistics", {"data": data, "analyses": ["describe", "quartiles", "outliers"]}
     )
     result_data = json.loads(result.content[0].text)
     # All three analyses should be present
