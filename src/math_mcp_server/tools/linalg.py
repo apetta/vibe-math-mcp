@@ -1,6 +1,7 @@
 """Linear algebra tools using NumPy and SciPy."""
 
-from typing import List, Literal, Union, cast
+from typing import Annotated, List, Literal, Union, cast
+from pydantic import Field
 from mcp.types import ToolAnnotations
 import json
 import numpy as np
@@ -13,7 +14,29 @@ from ..core import format_result, format_array_result, list_to_numpy, numpy_to_l
 
 @mcp.tool(
     name="matrix_operations",
-    description="Core matrix operations: multiply, inverse, transpose, determinant, trace.",
+    description="""Core matrix operations using NumPy BLAS.
+
+Examples:
+
+MATRIX MULTIPLICATION:
+    operation="multiply", matrix1=[[1,2],[3,4]], matrix2=[[5,6],[7,8]]
+    Result: [[19,22],[43,50]]
+
+MATRIX INVERSE:
+    operation="inverse", matrix1=[[1,2],[3,4]]
+    Result: [[-2,1],[1.5,-0.5]]
+
+TRANSPOSE:
+    operation="transpose", matrix1=[[1,2],[3,4]]
+    Result: [[1,3],[2,4]]
+
+DETERMINANT:
+    operation="determinant", matrix1=[[1,2],[3,4]]
+    Result: -2.0
+
+TRACE:
+    operation="trace", matrix1=[[1,2],[3,4]]
+    Result: 5.0 (1+4)""",
     annotations=ToolAnnotations(
         title="Matrix Operations",
         readOnlyHint=True,
@@ -21,28 +44,11 @@ from ..core import format_result, format_array_result, list_to_numpy, numpy_to_l
     ),
 )
 async def matrix_operations(
-    operation: Literal["multiply", "inverse", "transpose", "determinant", "trace"],
-    matrix1: List[List[float]],
-    matrix2: Union[str, List[List[float]], None] = None,
+    operation: Annotated[Literal["multiply", "inverse", "transpose", "determinant", "trace"], Field(description="Matrix operation")],
+    matrix1: Annotated[List[List[float]], Field(description="First matrix (e.g., [[1,2],[3,4]])")],
+    matrix2: Annotated[Union[str, List[List[float]], None], Field(description="Second matrix for multiplication")] = None,
 ) -> str:
-    """
-    Perform matrix operations using NumPy's BLAS-optimised routines.
-
-    Examples:
-        - operation="multiply", matrix1=[[1,2],[3,4]], matrix2=[[5,6],[7,8]] → matrix product
-        - operation="inverse", matrix1=[[1,2],[3,4]] → inverse matrix
-        - operation="transpose", matrix1=[[1,2],[3,4]] → transposed matrix
-        - operation="determinant", matrix1=[[1,2],[3,4]] → -2.0
-        - operation="trace", matrix1=[[1,2],[3,4]] → 5.0
-
-    Args:
-        operation: Matrix operation type
-        matrix1: First matrix (2D list)
-        matrix2: Second matrix (required for multiply)
-
-    Returns:
-        JSON with result (matrix or scalar)
-    """
+    """Core matrix operations."""
     try:
         # Parse stringified JSON from XML serialization
         if isinstance(matrix2, str):
@@ -102,7 +108,23 @@ async def matrix_operations(
 
 @mcp.tool(
     name="solve_linear_system",
-    description="Solve systems of linear equations (Ax = b) using SciPy's optimised solver.",
+    description="""Solve systems of linear equations (Ax = b) using SciPy's optimised solver.
+
+Examples:
+
+SQUARE SYSTEM (2 equations, 2 unknowns):
+    coefficients=[[2,3],[1,1]], constants=[8,3], method="direct"
+    Solves: 2x+3y=8, x+y=3
+    Result: [x=1, y=2]
+
+OVERDETERMINED SYSTEM (3 equations, 2 unknowns):
+    coefficients=[[1,2],[3,4],[5,6]], constants=[5,6,7], method="least_squares"
+    Finds best-fit x minimizing ||Ax-b||
+    Result: [x≈-6, y≈5.5]
+
+3x3 SYSTEM:
+    coefficients=[[2,1,-1],[1,3,2],[-1,2,1]], constants=[8,13,5], method="direct"
+    Result: [x=3, y=2, z=1]""",
     annotations=ToolAnnotations(
         title="Linear System Solver",
         readOnlyHint=True,
@@ -110,25 +132,11 @@ async def matrix_operations(
     ),
 )
 async def solve_linear_system(
-    coefficients: List[List[float]],
-    constants: List[float],
-    method: Literal["direct", "least_squares"] = "direct",
+    coefficients: Annotated[List[List[float]], Field(description="Coefficient matrix A in Ax=b system (2D list, e.g., [[2,3],[1,1]])")],
+    constants: Annotated[List[float], Field(description="Constants vector b in Ax=b system (1D list, e.g., [8,3])")],
+    method: Annotated[Literal["direct", "least_squares"], Field(description="Solution method: direct=exact (square systems), least_squares=overdetermined systems")] = "direct",
 ) -> str:
-    """
-    Solve linear systems using SciPy (preferred over matrix inversion).
-
-    Examples:
-        - coefficients=[[1,2],[3,4]], constants=[5,6] → solution vector x
-        - coefficients=[[1,2],[3,4],[5,6]], constants=[7,8,9], method="least_squares" → overdetermined system
-
-    Args:
-        coefficients: Coefficient matrix A (m×n)
-        constants: Constants vector b (m×1)
-        method: Solution method (direct for square systems, least_squares for overdetermined)
-
-    Returns:
-        JSON with solution vector
-    """
+    """Solve linear systems Ax=b using SciPy. Direct method for square systems, least squares for overdetermined. More stable than matrix inversion."""
     try:
         A = list_to_numpy(coefficients)
         b = np.array(constants, dtype=float)
@@ -172,7 +180,29 @@ async def solve_linear_system(
 
 @mcp.tool(
     name="matrix_decomposition",
-    description="Matrix decompositions: eigenvalues/vectors, SVD, QR, Cholesky, LU.",
+    description="""Matrix decompositions: eigenvalues/vectors, SVD, QR, Cholesky, LU.
+
+Examples:
+
+EIGENVALUE DECOMPOSITION:
+    matrix=[[4,2],[1,3]], decomposition="eigen"
+    Result: {eigenvalues: [5, 2], eigenvectors: [[0.89,0.45],[0.71,-0.71]]}
+
+SINGULAR VALUE DECOMPOSITION (SVD):
+    matrix=[[1,2],[3,4],[5,6]], decomposition="svd"
+    Result: {U: 3×3, singular_values: [9.5, 0.77], Vt: 2×2}
+
+QR FACTORISATION:
+    matrix=[[1,2],[3,4]], decomposition="qr"
+    Result: {Q: orthogonal, R: upper triangular}
+
+CHOLESKY (symmetric positive definite):
+    matrix=[[4,2],[2,3]], decomposition="cholesky"
+    Result: {L: [[2,0],[1,1.41]]} where A=LL^T
+
+LU DECOMPOSITION:
+    matrix=[[2,1],[4,3]], decomposition="lu"
+    Result: {P: permutation, L: lower, U: upper} where A=PLU""",
     annotations=ToolAnnotations(
         title="Matrix Decomposition",
         readOnlyHint=True,
@@ -180,25 +210,10 @@ async def solve_linear_system(
     ),
 )
 async def matrix_decomposition(
-    matrix: List[List[float]], decomposition: Literal["eigen", "svd", "qr", "cholesky", "lu"]
+    matrix: Annotated[List[List[float]], Field(description="Matrix to decompose as 2D nested list (e.g., [[4,2],[1,3]])")],
+    decomposition: Annotated[Literal["eigen", "svd", "qr", "cholesky", "lu"], Field(description="Decomposition type: eigen=eigenvalues/vectors, svd=singular value, qr=QR, cholesky=symmetric positive definite, lu=LU factorisation")],
 ) -> str:
-    """
-    Perform matrix decompositions using SciPy.
-
-    Examples:
-        - decomposition="eigen", matrix=[[4,2],[1,3]] → eigenvalues and eigenvectors
-        - decomposition="svd", matrix=[[1,2],[3,4]] → U, Σ, V^T
-        - decomposition="qr", matrix=[[1,2],[3,4]] → Q, R matrices
-        - decomposition="cholesky", matrix=[[4,2],[2,3]] → L (lower triangular)
-        - decomposition="lu", matrix=[[1,2],[3,4]] → P, L, U matrices
-
-    Args:
-        matrix: Input matrix (2D list)
-        decomposition: Type of decomposition
-
-    Returns:
-        JSON with decomposition results
-    """
+    """Matrix decompositions using SciPy: eigen (λ,v), SVD (UΣV^T), QR (orthogonal×triangular), Cholesky (LL^T), LU (PLU). For analysis, solving, and numerical stability."""
     try:
         mat = list_to_numpy(matrix)
 

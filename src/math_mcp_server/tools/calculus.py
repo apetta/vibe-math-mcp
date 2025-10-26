@@ -1,6 +1,7 @@
 """Calculus tools using SymPy for symbolic computation."""
 
-from typing import Literal, Optional, Union
+from typing import Annotated, Literal, Optional, Union
+from pydantic import Field
 from mcp.types import ToolAnnotations
 from sympy import sympify, diff, integrate, limit, series, Symbol, oo, N, lambdify
 import scipy.integrate as integrate_numeric
@@ -11,7 +12,29 @@ from ..core import format_json
 
 @mcp.tool(
     name="derivative",
-    description="Compute symbolic and numerical derivatives with support for higher orders and partial derivatives.",
+    description="""Compute symbolic and numerical derivatives with support for higher orders and partial derivatives.
+
+Examples:
+
+FIRST DERIVATIVE:
+    expression="x^3 + 2*x^2", variable="x", order=1
+    Result: derivative="3*x^2 + 4*x"
+
+SECOND DERIVATIVE (acceleration/concavity):
+    expression="x^3", variable="x", order=2
+    Result: derivative="6*x"
+
+EVALUATE AT POINT:
+    expression="sin(x)", variable="x", order=1, point=0
+    Result: derivative="cos(x)", value_at_point=1.0
+
+PRODUCT RULE:
+    expression="sin(x)*cos(x)", variable="x", order=1
+    Result: derivative="cos(x)^2 - sin(x)^2"
+
+PARTIAL DERIVATIVE:
+    expression="x^2*y", variable="y", order=1
+    Result: derivative="x^2" (treating x as constant)""",
     annotations=ToolAnnotations(
         title="Derivative Calculator",
         readOnlyHint=True,
@@ -19,25 +42,12 @@ from ..core import format_json
     ),
 )
 async def derivative(
-    expression: str, variable: str, order: int = 1, point: Optional[float] = None
+    expression: Annotated[str, Field(description="Mathematical expression to differentiate (e.g., 'x^3 + 2*x^2', 'sin(x)')", min_length=1)],
+    variable: Annotated[str, Field(description="Variable to differentiate with respect to (e.g., 'x', 't')", min_length=1)],
+    order: Annotated[int, Field(description="Derivative order (1=first derivative, 2=second, etc.)", ge=1)] = 1,
+    point: Annotated[float | None, Field(description="Optional point for numerical evaluation of the derivative")] = None,
 ) -> str:
-    """
-    Calculate derivatives using SymPy.
-
-    Examples:
-        - expression="x^3 + 2*x^2", variable="x", order=1 → "3*x^2 + 4*x"
-        - expression="x^3 + 2*x^2", variable="x", order=2 → "6*x + 4"
-        - expression="sin(x)", variable="x", order=1, point=0 → derivative expression and value at x=0
-
-    Args:
-        expression: Mathematical expression
-        variable: Variable to differentiate with respect to
-        order: Derivative order (default: 1)
-        point: Optional point for numerical evaluation
-
-    Returns:
-        JSON with symbolic derivative and optional numerical value
-    """
+    """Compute symbolic derivatives using SymPy. Supports higher orders and partial derivatives. Optional numerical evaluation at a point."""
     try:
         expr = sympify(expression)
         var = Symbol(variable)
@@ -69,7 +79,29 @@ async def derivative(
 
 @mcp.tool(
     name="integral",
-    description="Compute symbolic and numerical integrals (definite and indefinite).",
+    description="""Compute symbolic and numerical integrals (definite and indefinite).
+
+Examples:
+
+INDEFINITE INTEGRAL (antiderivative):
+    expression="x^2", variable="x"
+    Result: "x^3/3"
+
+DEFINITE INTEGRAL (area):
+    expression="x^2", variable="x", lower_bound=0, upper_bound=1
+    Result: 0.333
+
+TRIGONOMETRIC:
+    expression="sin(x)", variable="x", lower_bound=0, upper_bound=3.14159
+    Result: 2.0 (area under one period)
+
+NUMERICAL METHOD (non-elementary):
+    expression="exp(-x^2)", variable="x", lower_bound=0, upper_bound=1, method="numerical"
+    Result: 0.746824 (Gaussian integral approximation)
+
+SYMBOLIC ANTIDERIVATIVE:
+    expression="1/x", variable="x"
+    Result: "log(x)" """,
     annotations=ToolAnnotations(
         title="Integral Calculator",
         readOnlyHint=True,
@@ -77,30 +109,13 @@ async def derivative(
     ),
 )
 async def integral(
-    expression: str,
-    variable: str,
-    lower_bound: Optional[float] = None,
-    upper_bound: Optional[float] = None,
-    method: Literal["symbolic", "numerical"] = "symbolic",
+    expression: Annotated[str, Field(description="Mathematical expression to integrate (e.g., 'x^2', 'sin(x)')", min_length=1)],
+    variable: Annotated[str, Field(description="Integration variable (e.g., 'x', 't')", min_length=1)],
+    lower_bound: Annotated[float | None, Field(description="Lower bound for definite integral (omit for indefinite)")] = None,
+    upper_bound: Annotated[float | None, Field(description="Upper bound for definite integral (omit for indefinite)")] = None,
+    method: Annotated[Literal["symbolic", "numerical"], Field(description="Integration method: symbolic=exact/analytical, numerical=approximate (requires bounds)")] = "symbolic",
 ) -> str:
-    """
-    Calculate integrals using SymPy (symbolic) or SciPy (numerical).
-
-    Examples:
-        - expression="x^2", variable="x" → "x^3/3" (indefinite)
-        - expression="x^2", variable="x", lower_bound=0, upper_bound=1 → 0.333... (definite)
-        - expression="sin(x)", variable="x", lower_bound=0, upper_bound=pi → 2.0
-
-    Args:
-        expression: Mathematical expression
-        variable: Integration variable
-        lower_bound: Lower bound for definite integral
-        upper_bound: Upper bound for definite integral
-        method: Integration method (symbolic or numerical)
-
-    Returns:
-        JSON with integral result
-    """
+    """Compute integrals using SymPy (symbolic/exact) or SciPy (numerical/approximate). Supports indefinite (antiderivatives) and definite (area) integrals."""
     try:
         expr = sympify(expression)
         var = Symbol(variable)
@@ -163,7 +178,33 @@ async def integral(
 
 @mcp.tool(
     name="limits_series",
-    description="Compute limits and series expansions using SymPy.",
+    description="""Compute limits and series expansions using SymPy.
+
+Examples:
+
+CLASSIC LIMIT:
+    expression="sin(x)/x", variable="x", point=0, operation="limit"
+    Result: limit=1
+
+LIMIT AT INFINITY:
+    expression="1/x", variable="x", point="oo", operation="limit"
+    Result: limit=0
+
+ONE-SIDED LIMIT:
+    expression="1/x", variable="x", point=0, operation="limit", direction="+"
+    Result: limit=+∞ (approaching from right)
+
+REMOVABLE DISCONTINUITY:
+    expression="(x^2-1)/(x-1)", variable="x", point=1, operation="limit"
+    Result: limit=2
+
+MACLAURIN SERIES (at 0):
+    expression="exp(x)", variable="x", point=0, operation="series", order=4
+    Result: "1 + x + x^2/2 + x^3/6 + O(x^4)"
+
+TAYLOR SERIES (at point):
+    expression="sin(x)", variable="x", point=3.14159, operation="series", order=4
+    Result: expansion around π""",
     annotations=ToolAnnotations(
         title="Limits and Series",
         readOnlyHint=True,
@@ -171,32 +212,14 @@ async def integral(
     ),
 )
 async def limits_series(
-    expression: str,
-    variable: str,
-    point: Union[float, str],
-    operation: Literal["limit", "series"] = "limit",
-    order: int = 6,
-    direction: Literal["+", "-", "+-"] = "+-",
+    expression: Annotated[str, Field(description="Mathematical expression to analyse (e.g., 'sin(x)/x', 'exp(x)')", min_length=1)],
+    variable: Annotated[str, Field(description="Variable for limit/expansion (e.g., 'x', 't')", min_length=1)],
+    point: Annotated[Union[float, str], Field(description="Point for limit/expansion (number, 'oo' for infinity, '-oo' for -infinity)")],
+    operation: Annotated[Literal["limit", "series"], Field(description="Operation: limit=compute limit, series=Taylor/Maclaurin expansion")] = "limit",
+    order: Annotated[int, Field(description="Series expansion order (number of terms)", ge=1)] = 6,
+    direction: Annotated[Literal["+", "-", "+-"], Field(description="Limit direction: +=from right, -=from left, +-=both sides")] = "+-",
 ) -> str:
-    """
-    Calculate limits or series expansions.
-
-    Examples:
-        - expression="sin(x)/x", variable="x", point=0, operation="limit" → 1
-        - expression="1/x", variable="x", point=0, operation="limit", direction="+" → ∞
-        - expression="exp(x)", variable="x", point=0, operation="series", order=4 → 1 + x + x^2/2 + x^3/6 + O(x^4)
-
-    Args:
-        expression: Mathematical expression
-        variable: Variable
-        point: Point for limit/expansion ("oo" for infinity)
-        operation: Operation type (limit or series)
-        order: Order for series expansion (default: 6)
-        direction: Direction for limit ("+", "-", or "+-" for both sides)
-
-    Returns:
-        JSON with limit or series result
-    """
+    """Compute limits (lim[x→a]f(x)) and Taylor/Maclaurin series expansions using SymPy. Handles infinity, one-sided limits, removable discontinuities."""
     try:
         expr = sympify(expression)
         var = Symbol(variable)

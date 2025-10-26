@@ -1,6 +1,7 @@
 """Statistical analysis tools using Polars for performance."""
 
-from typing import Dict, List, Literal, Union
+from typing import Annotated, Dict, List, Literal, Union
+from pydantic import Field
 from mcp.types import ToolAnnotations
 import polars as pl
 
@@ -10,7 +11,30 @@ from ..core import format_result, format_json
 
 @mcp.tool(
     name="statistics",
-    description="Comprehensive statistical analysis: descriptive statistics, quartiles, outlier detection.",
+    description="""Comprehensive statistical analysis using Polars.
+
+Analysis types:
+    - describe: Count, mean, std, min, max, median
+    - quartiles: Q1, Q2, Q3, IQR
+    - outliers: IQR-based detection (values beyond Q1-1.5×IQR or Q3+1.5×IQR)
+
+Examples:
+
+DESCRIPTIVE STATISTICS:
+    data=[1,2,3,4,5,100], analyses=["describe"]
+    Result: {count:6, mean:19.17, std:39.25, min:1, max:100, median:3.5}
+
+QUARTILES:
+    data=[1,2,3,4,5], analyses=["quartiles"]
+    Result: {Q1:2, Q2:3, Q3:4, IQR:2}
+
+OUTLIER DETECTION:
+    data=[1,2,3,4,5,100], analyses=["outliers"]
+    Result: {outlier_values:[100], outlier_count:1, lower_bound:-1, upper_bound:8.5}
+
+FULL ANALYSIS:
+    data=[1,2,3,4,5,100], analyses=["describe","quartiles","outliers"]
+    Result: All three analyses combined""",
     annotations=ToolAnnotations(
         title="Statistical Analysis",
         readOnlyHint=True,
@@ -18,22 +42,10 @@ from ..core import format_result, format_json
     ),
 )
 async def statistics(
-    data: List[float], analyses: List[Literal["describe", "quartiles", "outliers"]]
+    data: Annotated[List[float], Field(description="List of numerical values (e.g., [1,2,3,4,5,100])")],
+    analyses: Annotated[List[Literal["describe", "quartiles", "outliers"]], Field(description="Types of analysis to perform")],
 ) -> str:
-    """
-    Perform comprehensive statistical analysis using Polars.
-
-    Examples:
-        - data=[1,2,3,4,5,100], analyses=["describe","outliers"] → full stats + outliers
-        - data=[1,2,3,4,5], analyses=["quartiles"] → Q1, Q2, Q3
-
-    Args:
-        data: List of numerical values
-        analyses: Types of analysis to perform
-
-    Returns:
-        JSON with statistical results
-    """
+    """Comprehensive statistical analysis."""
     try:
         df = pl.DataFrame({"values": data})
 
@@ -89,7 +101,34 @@ async def statistics(
 
 @mcp.tool(
     name="pivot_table",
-    description="Create pivot tables from tabular data with aggregation functions.",
+    description="""Create pivot tables from tabular data using Polars.
+
+Like Excel pivot tables: reshape data with row/column dimensions and aggregated values.
+
+Example:
+
+SALES BY REGION AND PRODUCT:
+    data=[
+        {"region":"North","product":"A","sales":100},
+        {"region":"North","product":"B","sales":150},
+        {"region":"South","product":"A","sales":80},
+        {"region":"South","product":"B","sales":120}
+    ],
+    index="region", columns="product", values="sales", aggfunc="sum"
+    Result:
+        product |  A   |  B
+        --------|------|------
+        North   | 100  | 150
+        South   |  80  | 120
+
+COUNT AGGREGATION:
+    Same data with aggfunc="count"
+    Result: Count of entries per region-product combination
+
+AVERAGE SCORES:
+    data=[{"dept":"Sales","role":"Manager","score":85}, ...]
+    index="dept", columns="role", values="score", aggfunc="mean"
+    Result: Average scores by department and role""",
     annotations=ToolAnnotations(
         title="Pivot Table",
         readOnlyHint=True,
@@ -97,29 +136,13 @@ async def statistics(
     ),
 )
 async def pivot_table(
-    data: List[Dict[str, Union[str, float]]],
-    index: str,
-    columns: str,
-    values: str,
-    aggfunc: Literal["sum", "mean", "count", "min", "max"] = "sum",
+    data: Annotated[List[Dict[str, Union[str, float]]], Field(description="List of row dictionaries")],
+    index: Annotated[str, Field(description="Column name for row index")],
+    columns: Annotated[str, Field(description="Column name for pivot columns")],
+    values: Annotated[str, Field(description="Column name to aggregate")],
+    aggfunc: Annotated[Literal["sum", "mean", "count", "min", "max"], Field(description="Aggregation function")] = "sum",
 ) -> str:
-    """
-    Create pivot tables using Polars for speed.
-
-    Examples:
-        - Sales data pivoted by region and product with sum aggregation
-        - User data pivoted by department and role with count aggregation
-
-    Args:
-        data: List of dictionaries representing rows
-        index: Column name for row index
-        columns: Column name for pivot columns
-        values: Column name to aggregate
-        aggfunc: Aggregation function
-
-    Returns:
-        JSON with pivot table result
-    """
+    """Create pivot tables."""
     try:
         df = pl.DataFrame(data)
 
@@ -158,7 +181,32 @@ async def pivot_table(
 
 @mcp.tool(
     name="correlation",
-    description="Calculate correlation matrices between multiple variables (Pearson or Spearman).",
+    description="""Calculate correlation matrices between multiple variables using Polars.
+
+Methods:
+    - pearson: Linear correlation (-1 to +1, 0 = no linear relationship)
+    - spearman: Rank-based correlation (monotonic, robust to outliers)
+
+Examples:
+
+PEARSON CORRELATION:
+    data={"x":[1,2,3], "y":[2,4,6], "z":[1,1,1]},
+    method="pearson", output_format="matrix"
+    Result: {
+        "x": {"x":1.0, "y":1.0, "z":NaN},
+        "y": {"x":1.0, "y":1.0, "z":NaN},
+        "z": {"x":NaN, "y":NaN, "z":NaN}
+    }
+
+PAIRWISE FORMAT:
+    data={"height":[170,175,168], "weight":[65,78,62]},
+    method="pearson", output_format="pairs"
+    Result: [{"var1":"height", "var2":"weight", "correlation":0.89}]
+
+SPEARMAN (RANK):
+    data={"x":[1,2,100], "y":[2,4,200]},
+    method="spearman"
+    Result: Perfect correlation (1.0) despite non-linear relationship""",
     annotations=ToolAnnotations(
         title="Correlation Analysis",
         readOnlyHint=True,
@@ -166,25 +214,11 @@ async def pivot_table(
     ),
 )
 async def correlation(
-    data: Dict[str, List[float]],
-    method: Literal["pearson", "spearman"] = "pearson",
-    output_format: Literal["matrix", "pairs"] = "matrix",
+    data: Annotated[Dict[str, List[float]], Field(description="Dict of variable names to values (e.g., {'x':[1,2,3],'y':[2,4,6]})")],
+    method: Annotated[Literal["pearson", "spearman"], Field(description="Correlation method")] = "pearson",
+    output_format: Annotated[Literal["matrix", "pairs"], Field(description="Output format: 'matrix' or 'pairs'")] = "matrix",
 ) -> str:
-    """
-    Compute correlation matrix using Polars.
-
-    Examples:
-        - data={"x": [1,2,3], "y": [2,4,6], "z": [1,1,1]}, method="pearson" → correlation matrix
-        - data={"x": [1,2,3], "y": [2,4,6]}, output_format="pairs" → pairwise correlations
-
-    Args:
-        data: Dictionary of variable names to value lists
-        method: Correlation method (pearson or spearman)
-        output_format: Output as matrix or pairwise correlations
-
-    Returns:
-        JSON with correlation results
-    """
+    """Calculate correlation matrices."""
     try:
         df = pl.DataFrame(data)
 

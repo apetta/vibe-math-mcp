@@ -2,7 +2,8 @@
 
 import json
 import math
-from typing import Any, Dict, List, Literal, Optional, Union, cast
+from typing import Annotated, Any, Dict, List, Literal, Optional, Union, cast
+from pydantic import Field
 from mcp.types import ToolAnnotations
 import numpy_financial as npf
 
@@ -12,7 +13,42 @@ from ..core import format_result
 
 @mcp.tool(
     name="financial_calcs",
-    description="Financial calculations: present value (PV), future value (FV), payment (PMT), IRR, NPV. Supports growing annuities.",
+    description="""Time Value of Money (TVM) calculations: solve for PV, FV, PMT, rate, IRR, or NPV.
+
+The TVM equation has 5 variables - know 4, solve for the 5th:
+    PV  = Present Value (lump sum now)
+    FV  = Future Value (lump sum at maturity)
+    PMT = Payment (regular periodic cash flow)
+    N   = Number of periods
+    I/Y = Interest rate per period
+
+Sign convention: negative = cash out (you pay), positive = cash in (you receive)
+
+Examples:
+
+ZERO-COUPON BOND: PV of £1000 in 10 years at 5%
+    calculation="pv", rate=0.05, periods=10, future_value=1000
+    Result: £613.91
+
+COUPON BOND: PV of £30 annual coupons + £1000 face value at 5% yield
+    calculation="pv", rate=0.05, periods=10, payment=30, future_value=1000
+    Result: £845.57
+
+RETIREMENT SAVINGS: FV with £500/month for 30 years at 7%
+    calculation="fv", rate=0.07/12, periods=360, payment=-500, present_value=0
+    Result: £566,764
+
+MORTGAGE PAYMENT: Monthly payment on £200k loan, 30 years, 4% APR
+    calculation="pmt", rate=0.04/12, periods=360, present_value=-200000, future_value=0
+    Result: £954.83
+
+INTEREST RATE: What rate grows £613.81 to £1000 in 10 years?
+    calculation="rate", periods=10, present_value=-613.81, future_value=1000
+    Result: 0.05 (5%)
+
+GROWING ANNUITY: Salary stream with 3.5% raises, discounted at 12%
+    calculation="pv", rate=0.12, periods=25, payment=-45000, growth_rate=0.035
+    Result: £402,586""",
     annotations=ToolAnnotations(
         title="Financial Calculations",
         readOnlyHint=True,
@@ -20,95 +56,17 @@ from ..core import format_result
     ),
 )
 async def financial_calcs(
-    calculation: Literal["pv", "fv", "pmt", "rate", "irr", "npv"],
-    rate: Optional[float] = None,
-    periods: Optional[int] = None,
-    payment: Optional[float] = None,
-    present_value: Optional[float] = None,
-    future_value: Optional[float] = None,
-    cash_flows: Union[str, List[float], None] = None,
-    when: Literal["end", "begin"] = "end",
-    growth_rate: float = 0.0,
+    calculation: Annotated[Literal["pv", "fv", "pmt", "rate", "irr", "npv"], Field(description="What to solve for: pv, fv, pmt, rate, irr, or npv")],
+    rate: Annotated[float | None, Field(description="Interest/discount rate per period (e.g., 0.05 for 5% annual)")] = None,
+    periods: Annotated[int | None, Field(description="Number of compounding periods", ge=1)] = None,
+    payment: Annotated[float | None, Field(description="Regular periodic payment (negative=pay out, positive=receive)")] = None,
+    present_value: Annotated[float | None, Field(description="Single lump sum at time 0 (negative=pay, positive=receive)")] = None,
+    future_value: Annotated[float | None, Field(description="Single lump sum at maturity (negative=owe, positive=receive)")] = None,
+    cash_flows: Annotated[Union[str, List[float], None], Field(description="Series of cash flows for IRR/NPV (e.g., [-100, 30, 30, 130])")] = None,
+    when: Annotated[Literal["end", "begin"], Field(description="Payment timing: 'end' (ordinary) or 'begin' (annuity due)")] = "end",
+    growth_rate: Annotated[float, Field(description="Payment growth rate per period (0.0 for level annuity)", ge=0)] = 0.0,
 ) -> str:
-    """
-    Time Value of Money (TVM) calculations.
-
-    The TVM equation has 5 variables - know 4, solve for the 5th:
-        PV  = Present Value (lump sum now)
-        FV  = Future Value (lump sum at maturity)
-        PMT = Payment (regular periodic cash flow)
-        N   = Number of periods
-        I/Y = Interest rate per period
-
-    Parameters:
-        calculation: What to solve for ("pv", "fv", "pmt", "irr", "npv")
-        rate: Interest/discount rate per period (e.g., 0.05 = 5% annually)
-        periods: Number of compounding periods (n)
-        payment: Regular periodic cash flow - happens EVERY period
-                 Examples: £30 bond coupon, £500 monthly contribution
-        present_value: Single lump sum at time 0
-                       Examples: Initial investment, loan principal
-        future_value: Single lump sum at maturity
-                      Examples: £1000 bond face value, savings goal
-        cash_flows: Series of cash flows for IRR/NPV calculations
-        when: Payment timing - 'end' (default) for ordinary annuity (payments at period end),
-              'begin' for annuity due (payments at period start)
-              Examples: Mortgages use 'end', leases/rent typically use 'begin'
-        growth_rate: Growth rate of payments per period (default: 0.0 for level annuity)
-                     For growing annuities where payments increase by growth_rate each period
-                     Examples: Salary with 3% annual raises, dividends growing at 2%/year
-                     Note: When growth_rate=0, behaves as standard annuity
-
-    Sign convention:
-        Negative = cash out (you pay)
-        Positive = cash in (you receive)
-
-    Common patterns:
-
-        ZERO-COUPON BOND: PV of £1000 in 10 years at 5%
-        ├─ Solving for: PV
-        ├─ Given: FV (£1000), rate (5%), periods (10)
-        └─ Call: calculation="pv", rate=0.05, periods=10, future_value=1000
-           Result: £613.91
-
-        COUPON BOND: PV of £30 annual coupons + £1000 face value at 5% yield
-        ├─ Solving for: PV
-        ├─ Given: PMT (£30), FV (£1000), rate (5%), periods (10)
-        └─ Call: calculation="pv", rate=0.05, periods=10,
-                 payment=30, future_value=1000
-           Result: £845.57
-
-        RETIREMENT SAVINGS: How much will I have with £500/month for 30 years at 7%?
-        ├─ Solving for: FV
-        ├─ Given: PMT (-£500), PV (0), rate (7%/12), periods (360)
-        └─ Call: calculation="fv", rate=0.07/12, periods=360,
-                 payment=-500, present_value=0
-           Result: £566,764
-
-        MORTGAGE PAYMENT: Monthly payment on £200k loan, 30 years, 4% APR
-        ├─ Solving for: PMT
-        ├─ Given: PV (-£200k), FV (0), rate (4%/12), periods (360)
-        └─ Call: calculation="pmt", rate=0.04/12, periods=360,
-                 present_value=-200000, future_value=0
-           Result: £954.83
-
-        INTEREST RATE: What rate on £613.81 grows to £1000 in 10 years?
-        ├─ Solving for: I/Y (rate)
-        ├─ Given: PV (-£613.81), FV (£1000), periods (10)
-        └─ Call: calculation="rate", periods=10,
-                 present_value=-613.81, future_value=1000
-           Result: 0.05 (5%)
-
-        GROWING ANNUITY: Salary stream with 3.5% raises, discounted at 12%
-        ├─ Solving for: PV
-        ├─ Given: PMT (£45,000), rate (12%), growth (3.5%), periods (25)
-        └─ Call: calculation="pv", rate=0.12, periods=25,
-                 payment=-45000, growth_rate=0.035
-           Result: £402,586
-
-    Returns:
-        JSON with result and calculation metadata
-    """
+    """Time Value of Money calculations."""
     try:
         # Parse stringified JSON from XML serialization
         if isinstance(cash_flows, str):
@@ -291,7 +249,25 @@ async def financial_calcs(
 
 @mcp.tool(
     name="compound_interest",
-    description="Calculate compound interest with various compounding frequencies.",
+    description="""Calculate compound interest with various compounding frequencies.
+
+Formulas:
+    Discrete: A = P(1 + r/n)^(nt)
+    Continuous: A = Pe^(rt)
+
+Examples:
+
+ANNUAL COMPOUNDING: £1000 at 5% for 10 years
+    principal=1000, rate=0.05, time=10, frequency="annual"
+    Result: £1628.89
+
+MONTHLY COMPOUNDING: £1000 at 5% for 10 years
+    principal=1000, rate=0.05, time=10, frequency="monthly"
+    Result: £1647.01
+
+CONTINUOUS COMPOUNDING: £1000 at 5% for 10 years
+    principal=1000, rate=0.05, time=10, frequency="continuous"
+    Result: £1648.72""",
     annotations=ToolAnnotations(
         title="Compound Interest",
         readOnlyHint=True,
@@ -299,33 +275,12 @@ async def financial_calcs(
     ),
 )
 async def compound_interest(
-    principal: float,
-    rate: float,
-    time: float,
-    frequency: Literal[
-        "annual", "semi-annual", "quarterly", "monthly", "daily", "continuous"
-    ] = "annual",
+    principal: Annotated[float, Field(description="Initial principal amount (e.g., 1000)")],
+    rate: Annotated[float, Field(description="Annual interest rate (e.g., 0.05 for 5%)")],
+    time: Annotated[float, Field(description="Time period in years (e.g., 10)", ge=0)],
+    frequency: Annotated[Literal["annual", "semi-annual", "quarterly", "monthly", "daily", "continuous"], Field(description="Compounding frequency")] = "annual",
 ) -> str:
-    """
-    Calculate compound interest with different compounding frequencies.
-
-    Formula: A = P(1 + r/n)^(nt) for discrete compounding
-             A = Pe^(rt) for continuous compounding
-
-    Examples:
-        - principal=1000, rate=0.05, time=10, frequency="annual" → 1628.89
-        - principal=1000, rate=0.05, time=10, frequency="monthly" → 1647.01
-        - principal=1000, rate=0.05, time=10, frequency="continuous" → 1648.72
-
-    Args:
-        principal: Initial amount
-        rate: Annual interest rate (e.g., 0.05 for 5%)
-        time: Time period in years
-        frequency: Compounding frequency
-
-    Returns:
-        JSON with final amount and interest earned
-    """
+    """Calculate compound interest."""
     try:
         freq_map = {
             "annual": 1,
@@ -361,7 +316,32 @@ async def compound_interest(
 
 @mcp.tool(
     name="perpetuity",
-    description="Calculate present value of perpetuities (infinite periodic payments).",
+    description="""Calculate present value of a perpetuity (infinite series of payments).
+
+A perpetuity is an annuity that continues forever. Common in:
+    - Preferred stock dividends
+    - Endowment funds
+    - Real estate with infinite rental income
+    - UK Consol bonds (historically)
+
+Formulas:
+    Level Ordinary: PV = C / r
+    Level Due: PV = C / r × (1 + r)
+    Growing: PV = C / (r - g), where r > g
+
+Examples:
+
+LEVEL PERPETUITY: £1000 annual payment at 5%
+    payment=1000, rate=0.05
+    Result: PV = £20,000
+
+GROWING PERPETUITY: £1000 payment growing 3% annually at 8% discount
+    payment=1000, rate=0.08, growth_rate=0.03
+    Result: PV = £20,000
+
+PERPETUITY DUE: £1000 at period start at 5%
+    payment=1000, rate=0.05, when='begin'
+    Result: PV = £21,000""",
     annotations=ToolAnnotations(
         title="Perpetuity Calculations",
         readOnlyHint=True,
@@ -369,44 +349,12 @@ async def compound_interest(
     ),
 )
 async def perpetuity(
-    payment: float,
-    rate: float,
-    growth_rate: Optional[float] = None,
-    when: Literal["end", "begin"] = "end",
+    payment: Annotated[float, Field(description="Periodic payment amount (e.g., 1000)")],
+    rate: Annotated[float, Field(description="Discount rate per period (e.g., 0.05)", gt=0)],
+    growth_rate: Annotated[float | None, Field(description="Payment growth rate (None or 0 for level, e.g., 0.03 for growing)", ge=0)] = None,
+    when: Annotated[Literal["end", "begin"], Field(description="Payment timing: 'end' or 'begin'")] = "end",
 ) -> str:
-    """
-    Calculate present value of a perpetuity (infinite series of payments).
-
-    A perpetuity is an annuity that continues forever. Common in:
-    - Preferred stock dividends
-    - Endowment funds
-    - Real estate with infinite rental income
-    - UK Consol bonds (historically)
-
-    Formulas:
-        Level Ordinary Perpetuity: PV = C / r
-        Level Perpetuity Due: PV = C / r × (1 + r)
-        Growing Perpetuity: PV = C / (r - g), where r > g
-
-    Parameters:
-        payment: Periodic payment amount (C)
-        rate: Discount rate per period (r) - must be > 0
-        growth_rate: Growth rate per period (g) - optional, for growing perpetuity
-                     If provided, must satisfy r > g
-        when: Payment timing - 'end' (default) for ordinary perpetuity,
-              'begin' for perpetuity due (payments at period start)
-
-    Examples:
-        Level perpetuity: payment=1000, rate=0.05 → PV = 20,000
-        Growing perpetuity: payment=1000, rate=0.08, growth_rate=0.03 → PV = 20,000
-        Perpetuity due: payment=1000, rate=0.05, when='begin' → PV = 21,000
-
-    Returns:
-        JSON with present value and calculation metadata
-
-    Raises:
-        ValueError: If rate <= 0, or if growth_rate >= rate, or if growth_rate < 0
-    """
+    """Calculate present value of perpetuity."""
     try:
         # Validate inputs
         if rate <= 0:

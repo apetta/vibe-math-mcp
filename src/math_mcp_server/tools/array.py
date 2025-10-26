@@ -1,6 +1,7 @@
 """Array calculation tools using Polars for optimal performance."""
 
-from typing import List, Literal, Optional, Union, cast
+from typing import Annotated, List, Literal, Optional, Union, cast
+from pydantic import Field
 from mcp.types import ToolAnnotations
 import json
 import numpy as np
@@ -11,7 +12,27 @@ from ..core import format_result, format_array_result, list_to_polars, polars_to
 
 @mcp.tool(
     name="array_operations",
-    description="Perform element-wise operations on arrays (add, subtract, multiply, divide, power).",
+    description="""Perform element-wise operations on arrays using Polars.
+
+Supports array-array and array-scalar operations.
+
+Examples:
+
+SCALAR MULTIPLICATION:
+    operation="multiply", array1=[[1,2],[3,4]], array2=2
+    Result: [[2,4],[6,8]]
+
+ARRAY ADDITION:
+    operation="add", array1=[[1,2]], array2=[[3,4]]
+    Result: [[4,6]]
+
+POWER OPERATION:
+    operation="power", array1=[[2,3]], array2=2
+    Result: [[4,9]]
+
+ARRAY DIVISION:
+    operation="divide", array1=[[10,20],[30,40]], array2=[[2,4],[5,8]]
+    Result: [[5,5],[6,5]]""",
     annotations=ToolAnnotations(
         title="Array Operations",
         readOnlyHint=True,
@@ -19,25 +40,11 @@ from ..core import format_result, format_array_result, list_to_polars, polars_to
     ),
 )
 async def array_operations(
-    operation: Literal["add", "subtract", "multiply", "divide", "power"],
-    array1: List[List[float]],
-    array2: Union[str, List[List[float]], float],
+    operation: Annotated[Literal["add", "subtract", "multiply", "divide", "power"], Field(description="Element-wise operation to perform")],
+    array1: Annotated[List[List[float]], Field(description="First 2D array (e.g., [[1,2],[3,4]])")],
+    array2: Annotated[Union[str, List[List[float]], float], Field(description="Second array, scalar, or JSON string")],
 ) -> str:
-    """
-    Perform element-wise operations using Polars for speed.
-
-    Examples:
-        - operation="multiply", array1=[[1,2],[3,4]], array2=2 → [[2,4],[6,8]]
-        - operation="add", array1=[[1,2]], array2=[[3,4]] → [[4,6]]
-
-    Args:
-        operation: Operation type (add, subtract, multiply, divide, power)
-        array1: First array (2D list)
-        array2: Second array (2D list) or scalar value
-
-    Returns:
-        JSON with result array
-    """
+    """Element-wise array operations."""
     try:
         # Handle XML serialization: parse stringified JSON
         if isinstance(array2, str):
@@ -83,7 +90,27 @@ async def array_operations(
 
 @mcp.tool(
     name="array_statistics",
-    description="Calculate statistical measures on arrays (mean, median, std, min, max, sum) with optional axis selection.",
+    description="""Calculate statistical measures on arrays using Polars.
+
+Supports computation across entire array, rows, or columns.
+
+Examples:
+
+COLUMN-WISE MEANS:
+    data=[[1,2,3],[4,5,6]], operations=["mean"], axis=0
+    Result: [2.5, 3.5, 4.5] (average of each column)
+
+ROW-WISE MEANS:
+    data=[[1,2,3],[4,5,6]], operations=["mean"], axis=1
+    Result: [2.0, 5.0] (average of each row)
+
+OVERALL STATISTICS:
+    data=[[1,2,3],[4,5,6]], operations=["mean","std"], axis=None
+    Result: {mean: 3.5, std: 1.71}
+
+MULTIPLE STATISTICS:
+    data=[[1,2,3],[4,5,6]], operations=["min","max","mean"], axis=0
+    Result: {min: [1,2,3], max: [4,5,6], mean: [2.5,3.5,4.5]}""",
     annotations=ToolAnnotations(
         title="Array Statistics",
         readOnlyHint=True,
@@ -91,25 +118,11 @@ async def array_operations(
     ),
 )
 async def array_statistics(
-    data: List[List[float]],
-    operations: List[Literal["mean", "median", "std", "min", "max", "sum"]],
-    axis: Optional[int] = None,
+    data: Annotated[List[List[float]], Field(description="2D array (e.g., [[1,2,3],[4,5,6]])")],
+    operations: Annotated[List[Literal["mean", "median", "std", "min", "max", "sum"]], Field(description="Statistics to compute (e.g., ['mean','std'])")],
+    axis: Annotated[int | None, Field(description="Axis: 0=column-wise, 1=row-wise, None=overall")] = None,
 ) -> str:
-    """
-    Compute statistics using Polars for optimal performance.
-
-    Examples:
-        - data=[[1,2,3],[4,5,6]], operations=["mean"], axis=0 → column means
-        - data=[[1,2,3],[4,5,6]], operations=["mean","std"], axis=None → overall stats
-
-    Args:
-        data: 2D array as nested list
-        operations: Statistics to compute
-        axis: 0 for column-wise, 1 for row-wise, None for overall
-
-    Returns:
-        JSON with computed statistics
-    """
+    """Calculate array statistics."""
     try:
         df = list_to_polars(data)
 
@@ -168,7 +181,25 @@ async def array_statistics(
 
 @mcp.tool(
     name="array_aggregate",
-    description="Perform aggregation operations: sumproduct, weighted average, or dot product.",
+    description="""Perform aggregation operations on 1D arrays.
+
+Examples:
+
+SUMPRODUCT:
+    operation="sumproduct", array1=[1,2,3], array2=[4,5,6]
+    Result: 32 (1×4 + 2×5 + 3×6)
+
+WEIGHTED AVERAGE:
+    operation="weighted_average", array1=[10,20,30], weights=[1,2,3]
+    Result: 23.33... ((10×1 + 20×2 + 30×3) / (1+2+3))
+
+DOT PRODUCT:
+    operation="dot_product", array1=[1,2], array2=[3,4]
+    Result: 11 (1×3 + 2×4)
+
+GRADE CALCULATION:
+    operation="weighted_average", array1=[85,92,78], weights=[0.3,0.5,0.2]
+    Result: 86.5""",
     annotations=ToolAnnotations(
         title="Array Aggregation",
         readOnlyHint=True,
@@ -176,28 +207,12 @@ async def array_statistics(
     ),
 )
 async def array_aggregate(
-    operation: Literal["sumproduct", "weighted_average", "dot_product"],
-    array1: List[float],
-    array2: Union[str, List[float], None] = None,
-    weights: Union[str, List[float], None] = None,
+    operation: Annotated[Literal["sumproduct", "weighted_average", "dot_product"], Field(description="Aggregation operation")],
+    array1: Annotated[List[float], Field(description="First 1D array (e.g., [1,2,3])")],
+    array2: Annotated[Union[str, List[float], None], Field(description="Second 1D array for sumproduct/dot_product")] = None,
+    weights: Annotated[Union[str, List[float], None], Field(description="Weights for weighted_average (e.g., [1,2,3])")] = None,
 ) -> str:
-    """
-    Perform advanced aggregation operations.
-
-    Examples:
-        - operation="sumproduct", array1=[1,2,3], array2=[4,5,6] → 32 (1*4 + 2*5 + 3*6)
-        - operation="weighted_average", array1=[10,20,30], weights=[1,2,3] → 23.33...
-        - operation="dot_product", array1=[1,2], array2=[3,4] → 11
-
-    Args:
-        operation: Aggregation type
-        array1: First array
-        array2: Second array (for sumproduct/dot_product)
-        weights: Weights (for weighted_average)
-
-    Returns:
-        JSON with aggregated result
-    """
+    """Aggregate 1D arrays."""
     try:
         # Parse stringified JSON from XML serialization
         if isinstance(array2, str):
@@ -235,7 +250,31 @@ async def array_aggregate(
 
 @mcp.tool(
     name="array_transform",
-    description="Transform arrays: normalise, standardise, min-max scale, or log transform.",
+    description="""Transform arrays for ML preprocessing and data normalization.
+
+Transformations:
+    - normalize: L2 normalization (unit vector)
+    - standardize: Z-score (mean=0, std=1)
+    - minmax_scale: Scale to [0,1] range
+    - log_transform: Natural log transform
+
+Examples:
+
+L2 NORMALIZATION:
+    data=[[3,4]], transform="normalize"
+    Result: [[0.6,0.8]] (3²+4²=25, √25=5, 3/5=0.6, 4/5=0.8)
+
+STANDARDIZATION (Z-SCORE):
+    data=[[1,2],[3,4]], transform="standardize"
+    Result: Values with mean=0, std=1
+
+MIN-MAX SCALING:
+    data=[[1,2],[3,4]], transform="minmax_scale"
+    Result: [[0,0.33],[0.67,1]] (scaled to [0,1])
+
+LOG TRANSFORM:
+    data=[[1,10,100]], transform="log_transform"
+    Result: [[0,2.3,4.6]] (natural log)""",
     annotations=ToolAnnotations(
         title="Array Transformation",
         readOnlyHint=True,
@@ -243,26 +282,11 @@ async def array_aggregate(
     ),
 )
 async def array_transform(
-    data: List[List[float]],
-    transform: Literal["normalize", "standardize", "minmax_scale", "log_transform"],
-    axis: Optional[int] = None,
+    data: Annotated[List[List[float]], Field(description="2D array to transform (e.g., [[1,2],[3,4]])")],
+    transform: Annotated[Literal["normalize", "standardize", "minmax_scale", "log_transform"], Field(description="Transformation type")],
+    axis: Annotated[int | None, Field(description="Axis: 0=column-wise, 1=row-wise, None=overall")] = None,
 ) -> str:
-    """
-    Apply transformations to arrays.
-
-    Examples:
-        - data=[[1,2],[3,4]], transform="normalize" → L2 normalized values
-        - data=[[1,2],[3,4]], transform="standardize" → z-score standardized
-        - data=[[1,2],[3,4]], transform="minmax_scale" → scaled to [0,1]
-
-    Args:
-        data: 2D array as nested list
-        transform: Transformation type
-        axis: 0 for column-wise, None for overall
-
-    Returns:
-        JSON with transformed array
-    """
+    """Transform arrays."""
     try:
         arr = list_to_numpy(data)
 
