@@ -830,68 +830,6 @@ wheels = [
 ]
 
 [[package]]
-name = "math-mcp-server"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "fastmcp" },
-    { name = "numpy" },
-    { name = "numpy-financial" },
-    { name = "pandas" },
-    { name = "polars" },
-    { name = "pyarrow" },
-    { name = "pydantic" },
-    { name = "scipy" },
-    { name = "sympy" },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "poethepoet" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-xdist" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "fastmcp", specifier = "~=2.13.0" },
-    { name = "numpy", specifier = "~=2.3.4" },
-    { name = "numpy-financial", specifier = "~=1.0.0" },
-    { name = "pandas", specifier = "~=2.3.3" },
-    { name = "polars", specifier = "~=1.34.0" },
-    { name = "pyarrow", specifier = "~=22.0.0" },
-    { name = "pydantic", specifier = "~=2.12.3" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.1.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.3.0" },
-    { name = "scipy", specifier = "~=1.16.2" },
-    { name = "sympy", specifier = "~=1.14.0" },
-]
-provides-extras = ["dev"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "poethepoet", specifier = "~=0.37.0" },
-    { name = "pytest", specifier = "~=8.4.2" },
-    { name = "pytest-asyncio", specifier = "~=1.1.0" },
-    { name = "pytest-cov", specifier = "~=7.0.0" },
-    { name = "pytest-xdist", specifier = "~=3.8.0" },
-    { name = "ruff", specifier = "~=0.14.2" },
-]
-
-[[package]]
 name = "mcp"
 version = "1.19.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2108,6 +2046,68 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/cb/ce/f06b84e2697fef4688ca63bdb2fdf113ca0a3be33f94488f2cadb690b0cf/uvicorn-0.38.0.tar.gz", hash = "sha256:fd97093bdd120a2609fc0d3afe931d4d4ad688b6e75f0f929fde1bc36fe0e91d", size = 80605, upload-time = "2025-10-18T13:46:44.63Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ee/d9/d88e73ca598f4f6ff671fb5fde8a32925c2e08a637303a1d12883c7305fa/uvicorn-0.38.0-py3-none-any.whl", hash = "sha256:48c0afd214ceb59340075b4a052ea1ee91c16fbc2a9b1469cca0e54566977b02", size = 68109, upload-time = "2025-10-18T13:46:42.958Z" },
+]
+
+[[package]]
+name = "vibe-math"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "fastmcp" },
+    { name = "numpy" },
+    { name = "numpy-financial" },
+    { name = "pandas" },
+    { name = "polars" },
+    { name = "pyarrow" },
+    { name = "pydantic" },
+    { name = "scipy" },
+    { name = "sympy" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "poethepoet" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-xdist" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "fastmcp", specifier = "~=2.13.0" },
+    { name = "numpy", specifier = "~=2.3.4" },
+    { name = "numpy-financial", specifier = "~=1.0.0" },
+    { name = "pandas", specifier = "~=2.3.3" },
+    { name = "polars", specifier = "~=1.34.0" },
+    { name = "pyarrow", specifier = "~=22.0.0" },
+    { name = "pydantic", specifier = "~=2.12.3" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23.0" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.1.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.3.0" },
+    { name = "scipy", specifier = "~=1.16.2" },
+    { name = "sympy", specifier = "~=1.14.0" },
+]
+provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "poethepoet", specifier = "~=0.37.0" },
+    { name = "pytest", specifier = "~=8.4.2" },
+    { name = "pytest-asyncio", specifier = "~=1.1.0" },
+    { name = "pytest-cov", specifier = "~=7.0.0" },
+    { name = "pytest-xdist", specifier = "~=3.8.0" },
+    { name = "ruff", specifier = "~=0.14.2" },
 ]
 
 [[package]]

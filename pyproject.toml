@@ -1,5 +1,5 @@
 [project]
-name = "math-mcp-server"
+name = "vibe-math"
 version = "0.1.0"
 description = "High-performance MCP server for mathematical operations using Polars and scientific Python"
 readme = "README.md"
@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.scripts]
-math-mcp-server = "math_mcp_server.server:main"
+vibe-math = "vibe_math.server:main"
 
 [project.optional-dependencies]
 dev = [
@@ -43,7 +43,7 @@ python_functions = ["test_*"]
 addopts = [
     "--strict-markers",
     "-ra",
-    "--cov=math_mcp_server",
+    "--cov=vibe_math",
     "--cov-report=term-missing",
     "--cov-report=html",
 ]
@@ -53,7 +53,7 @@ line-length = 100
 target-version = "py310"
 
 [tool.coverage.run]
-source = ["src/math_mcp_server"]
+source = ["src/vibe_math"]
 omit = ["*/tests/*"]
 
 [tool.coverage.report]

@@ -1,4 +1,4 @@
-"""Math MCP Server - High-performance mathematical operations using Polars and scientific Python."""
+"""Vibe Math - High-performance mathematical operations using Polars and scientific Python."""
 
 import logging
 from fastmcp import FastMCP
@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Create FastMCP server instance
-mcp = FastMCP("math-mcp")
+mcp = FastMCP("vibe-math")
 
 # Import and register all tools (must be after mcp instance creation for decorators)
 from .tools import array, basic, calculus, financial, linalg, statistics  # noqa: E402

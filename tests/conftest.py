@@ -2,7 +2,7 @@
 
 import pytest
 from fastmcp import Client
-from math_mcp_server import mcp
+from vibe_math import mcp
 
 
 @pytest.fixture
