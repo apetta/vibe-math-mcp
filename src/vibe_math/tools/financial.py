@@ -8,7 +8,7 @@ from mcp.types import ToolAnnotations
 import numpy_financial as npf
 
 from ..server import mcp
-from ..core import format_result, ContextParam
+from ..core import format_result
 
 
 @mcp.tool(
@@ -88,7 +88,6 @@ async def financial_calcs(
     growth_rate: Annotated[
         float, Field(description="Payment growth rate per period (0.0 for level annuity)", ge=0)
     ] = 0.0,
-    context: ContextParam = None,
 ) -> str:
     """Time Value of Money calculations."""
     try:
@@ -271,7 +270,6 @@ async def financial_calcs(
             metadata["when"] = when
         if growth_rate != 0.0:
             metadata["growth_rate"] = growth_rate
-        metadata["context"] = context
 
         return format_result(float(result), metadata)
     except Exception as e:
@@ -313,7 +311,6 @@ async def compound_interest(
         Literal["annual", "semi-annual", "quarterly", "monthly", "daily", "continuous"],
         Field(description="Compounding frequency"),
     ] = "annual",
-    context: ContextParam = None,
 ) -> str:
     """Calculate compound interest."""
     try:
@@ -343,7 +340,6 @@ async def compound_interest(
                 "time": time,
                 "frequency": frequency,
                 "interest_earned": float(interest_earned),
-                "context": context,
             },
         )
     except Exception as e:
@@ -396,7 +392,6 @@ async def perpetuity(
     when: Annotated[
         Literal["end", "begin"], Field(description="Payment timing: 'end' or 'begin'")
     ] = "end",
-    context: ContextParam = None,
 ) -> str:
     """Calculate present value of perpetuity."""
     try:
@@ -437,7 +432,6 @@ async def perpetuity(
             metadata["growth_rate"] = growth_rate
         if when != "end":
             metadata["when"] = when
-        metadata["context"] = context
 
         return format_result(float(pv), metadata)
 

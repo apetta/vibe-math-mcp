@@ -8,7 +8,7 @@ from mcp.types import ToolAnnotations
 import numpy as np
 
 from ..server import mcp
-from ..core import format_result, ContextParam
+from ..core import format_result
 
 
 @mcp.tool(
@@ -48,7 +48,6 @@ MULTIPLE VARIABLES:
 async def calculate(
     expression: Annotated[str, Field(description="Mathematical expression (e.g., '2+2', 'sin(pi/2)', 'x^2+1')", min_length=1)],
     variables: Annotated[Dict[str, float] | None, Field(description="Variable substitutions (e.g., {'x': 5, 'y': 10})")] = None,
-    context: ContextParam = None,
 ) -> str:
     """Evaluate mathematical expressions."""
     try:
@@ -59,7 +58,7 @@ async def calculate(
         else:
             result = float(N(simplify(expr)))
 
-        return format_result(result, {"expression": expression, "variables": variables, "context": context})
+        return format_result(result, {"expression": expression, "variables": variables})
     except Exception as e:
         raise ValueError(
             f"Failed to evaluate expression '{expression}'. "
@@ -99,7 +98,6 @@ async def percentage(
     operation: Annotated[Literal["of", "increase", "decrease", "change"], Field(description="Type of calculation")],
     value: Annotated[float, Field(description="Base value")],
     percentage: Annotated[float, Field(description="Percentage amount (or new value for 'change')")],
-    context: ContextParam = None,
 ) -> str:
     """Perform percentage calculations."""
     try:
@@ -128,7 +126,6 @@ async def percentage(
                 "value": value,
                 "percentage": percentage,
                 "explanation": explanation,
-                "context": context,
             },
         )
     except Exception as e:
@@ -172,7 +169,6 @@ async def round_values(
     values: Annotated[Union[float, List[float]], Field(description="Single value or list (e.g., 3.14159 or [3.14, 2.71])")],
     method: Annotated[Literal["round", "floor", "ceil", "trunc"], Field(description="Rounding method")] = "round",
     decimals: Annotated[int, Field(description="Number of decimal places", ge=0)] = 0,
-    context: ContextParam = None,
 ) -> str:
     """Advanced rounding operations."""
     try:
@@ -194,7 +190,7 @@ async def round_values(
 
         final_result = float(result[0]) if is_single else result.tolist()
 
-        return format_result(final_result, {"method": method, "decimals": decimals, "context": context})
+        return format_result(final_result, {"method": method, "decimals": decimals})
     except Exception as e:
         raise ValueError(f"Rounding operation failed: {str(e)}")
 
@@ -226,7 +222,6 @@ async def convert_units(
     value: Annotated[float, Field(description="Value to convert (e.g., 180, 3.14159)")],
     from_unit: Annotated[Literal["degrees", "radians"], Field(description="Source unit")],
     to_unit: Annotated[Literal["degrees", "radians"], Field(description="Target unit")],
-    context: ContextParam = None,
 ) -> str:
     """Convert between angle units."""
     try:
@@ -240,7 +235,7 @@ async def convert_units(
             raise ValueError(f"Unsupported conversion: {from_unit} to {to_unit}")
 
         return format_result(
-            result, {"from_unit": from_unit, "to_unit": to_unit, "original_value": value, "context": context}
+            result, {"from_unit": from_unit, "to_unit": to_unit, "original_value": value}
         )
     except Exception as e:
         raise ValueError(f"Unit conversion failed: {str(e)}")

@@ -7,7 +7,7 @@ import json
 import numpy as np
 
 from ..server import mcp
-from ..core import format_result, format_array_result, list_to_polars, polars_to_list, list_to_numpy, ContextParam
+from ..core import format_result, format_array_result, list_to_polars, polars_to_list, list_to_numpy
 
 
 @mcp.tool(
@@ -49,7 +49,6 @@ async def array_operations(
         Union[str, List[List[float]], float],
         Field(description="Second array, scalar, or JSON string"),
     ],
-    context: ContextParam = None,
 ) -> str:
     """Element-wise array operations."""
     try:
@@ -89,7 +88,7 @@ async def array_operations(
         result = polars_to_list(result_df)
 
         return format_array_result(
-            result, {"operation": operation, "shape": f"{len(result)}×{len(result[0])}", "context": context}
+            result, {"operation": operation, "shape": f"{len(result)}×{len(result[0])}"}
         )
     except Exception as e:
         raise ValueError(f"Array operation failed: {str(e)}")
@@ -133,7 +132,6 @@ async def array_statistics(
     axis: Annotated[
         int | None, Field(description="Axis: 0=column-wise, 1=row-wise, None=overall")
     ] = None,
-    context: ContextParam = None,
 ) -> str:
     """Calculate array statistics."""
     try:
@@ -187,7 +185,7 @@ async def array_statistics(
                 elif op == "sum":
                     results[op] = np.sum(arr, axis=1).tolist()
 
-        return format_result(results, {"shape": f"{len(data)}×{len(data[0])}", "axis": axis, "context": context})
+        return format_result(results, {"shape": f"{len(data)}×{len(data[0])}", "axis": axis})
     except Exception as e:
         raise ValueError(f"Statistics calculation failed: {str(e)}")
 
@@ -233,7 +231,6 @@ async def array_aggregate(
         Union[str, List[float], None],
         Field(description="Weights for weighted_average (e.g., [1,2,3])"),
     ] = None,
-    context: ContextParam = None,
 ) -> str:
     """Aggregate 1D arrays."""
     try:
@@ -266,7 +263,7 @@ async def array_aggregate(
         else:
             raise ValueError(f"Unknown operation: {operation}")
 
-        return format_result(result, {"operation": operation, "context": context})
+        return format_result(result, {"operation": operation})
     except Exception as e:
         raise ValueError(f"Aggregation failed: {str(e)}")
 
@@ -315,7 +312,6 @@ async def array_transform(
     axis: Annotated[
         int | None, Field(description="Axis: 0=column-wise, 1=row-wise, None=overall")
     ] = None,
-    context: ContextParam = None,
 ) -> str:
     """Transform arrays."""
     try:
@@ -373,6 +369,6 @@ async def array_transform(
         else:
             raise ValueError(f"Unknown transform: {transform}")
 
-        return format_array_result(result, {"transform": transform, "axis": axis, "context": context})
+        return format_array_result(result, {"transform": transform, "axis": axis})
     except Exception as e:
         raise ValueError(f"Transformation failed: {str(e)}")
