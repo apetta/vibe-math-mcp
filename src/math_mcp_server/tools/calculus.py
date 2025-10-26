@@ -1,6 +1,6 @@
 """Calculus tools using SymPy for symbolic computation."""
 
-from typing import Annotated, Literal, Optional, Union
+from typing import Annotated, Literal, Union
 from pydantic import Field
 from mcp.types import ToolAnnotations
 from sympy import sympify, diff, integrate, limit, series, Symbol, oo, N, lambdify
@@ -42,10 +42,25 @@ PARTIAL DERIVATIVE:
     ),
 )
 async def derivative(
-    expression: Annotated[str, Field(description="Mathematical expression to differentiate (e.g., 'x^3 + 2*x^2', 'sin(x)')", min_length=1)],
-    variable: Annotated[str, Field(description="Variable to differentiate with respect to (e.g., 'x', 't')", min_length=1)],
-    order: Annotated[int, Field(description="Derivative order (1=first derivative, 2=second, etc.)", ge=1)] = 1,
-    point: Annotated[float | None, Field(description="Optional point for numerical evaluation of the derivative")] = None,
+    expression: Annotated[
+        str,
+        Field(
+            description="Mathematical expression to differentiate (e.g., 'x^3 + 2*x^2', 'sin(x)')",
+            min_length=1,
+        ),
+    ],
+    variable: Annotated[
+        str,
+        Field(
+            description="Variable to differentiate with respect to (e.g., 'x', 't')", min_length=1
+        ),
+    ],
+    order: Annotated[
+        int, Field(description="Derivative order (1=first derivative, 2=second, etc.)", ge=1)
+    ] = 1,
+    point: Annotated[
+        float | None, Field(description="Optional point for numerical evaluation of the derivative")
+    ] = None,
 ) -> str:
     """Compute symbolic derivatives using SymPy. Supports higher orders and partial derivatives. Optional numerical evaluation at a point."""
     try:
@@ -109,11 +124,27 @@ SYMBOLIC ANTIDERIVATIVE:
     ),
 )
 async def integral(
-    expression: Annotated[str, Field(description="Mathematical expression to integrate (e.g., 'x^2', 'sin(x)')", min_length=1)],
-    variable: Annotated[str, Field(description="Integration variable (e.g., 'x', 't')", min_length=1)],
-    lower_bound: Annotated[float | None, Field(description="Lower bound for definite integral (omit for indefinite)")] = None,
-    upper_bound: Annotated[float | None, Field(description="Upper bound for definite integral (omit for indefinite)")] = None,
-    method: Annotated[Literal["symbolic", "numerical"], Field(description="Integration method: symbolic=exact/analytical, numerical=approximate (requires bounds)")] = "symbolic",
+    expression: Annotated[
+        str,
+        Field(
+            description="Mathematical expression to integrate (e.g., 'x^2', 'sin(x)')", min_length=1
+        ),
+    ],
+    variable: Annotated[
+        str, Field(description="Integration variable (e.g., 'x', 't')", min_length=1)
+    ],
+    lower_bound: Annotated[
+        float | None, Field(description="Lower bound for definite integral (omit for indefinite)")
+    ] = None,
+    upper_bound: Annotated[
+        float | None, Field(description="Upper bound for definite integral (omit for indefinite)")
+    ] = None,
+    method: Annotated[
+        Literal["symbolic", "numerical"],
+        Field(
+            description="Integration method: symbolic=exact/analytical, numerical=approximate (requires bounds)"
+        ),
+    ] = "symbolic",
 ) -> str:
     """Compute integrals using SymPy (symbolic/exact) or SciPy (numerical/approximate). Supports indefinite (antiderivatives) and definite (area) integrals."""
     try:
@@ -212,12 +243,31 @@ TAYLOR SERIES (at point):
     ),
 )
 async def limits_series(
-    expression: Annotated[str, Field(description="Mathematical expression to analyse (e.g., 'sin(x)/x', 'exp(x)')", min_length=1)],
-    variable: Annotated[str, Field(description="Variable for limit/expansion (e.g., 'x', 't')", min_length=1)],
-    point: Annotated[Union[float, str], Field(description="Point for limit/expansion (number, 'oo' for infinity, '-oo' for -infinity)")],
-    operation: Annotated[Literal["limit", "series"], Field(description="Operation: limit=compute limit, series=Taylor/Maclaurin expansion")] = "limit",
+    expression: Annotated[
+        str,
+        Field(
+            description="Mathematical expression to analyse (e.g., 'sin(x)/x', 'exp(x)')",
+            min_length=1,
+        ),
+    ],
+    variable: Annotated[
+        str, Field(description="Variable for limit/expansion (e.g., 'x', 't')", min_length=1)
+    ],
+    point: Annotated[
+        Union[float, str],
+        Field(
+            description="Point for limit/expansion (number, 'oo' for infinity, '-oo' for -infinity)"
+        ),
+    ],
+    operation: Annotated[
+        Literal["limit", "series"],
+        Field(description="Operation: limit=compute limit, series=Taylor/Maclaurin expansion"),
+    ] = "limit",
     order: Annotated[int, Field(description="Series expansion order (number of terms)", ge=1)] = 6,
-    direction: Annotated[Literal["+", "-", "+-"], Field(description="Limit direction: +=from right, -=from left, +-=both sides")] = "+-",
+    direction: Annotated[
+        Literal["+", "-", "+-"],
+        Field(description="Limit direction: +=from right, -=from left, +-=both sides"),
+    ] = "+-",
 ) -> str:
     """Compute limits (lim[x→a]f(x)) and Taylor/Maclaurin series expansions using SymPy. Handles infinity, one-sided limits, removable discontinuities."""
     try:

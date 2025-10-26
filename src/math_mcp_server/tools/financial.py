@@ -2,7 +2,7 @@
 
 import json
 import math
-from typing import Annotated, Any, Dict, List, Literal, Optional, Union, cast
+from typing import Annotated, Any, Dict, List, Literal, Union, cast
 from pydantic import Field
 from mcp.types import ToolAnnotations
 import numpy_financial as npf
@@ -56,15 +56,38 @@ GROWING ANNUITY: Salary stream with 3.5% raises, discounted at 12%
     ),
 )
 async def financial_calcs(
-    calculation: Annotated[Literal["pv", "fv", "pmt", "rate", "irr", "npv"], Field(description="What to solve for: pv, fv, pmt, rate, irr, or npv")],
-    rate: Annotated[float | None, Field(description="Interest/discount rate per period (e.g., 0.05 for 5% annual)")] = None,
+    calculation: Annotated[
+        Literal["pv", "fv", "pmt", "rate", "irr", "npv"],
+        Field(description="What to solve for: pv, fv, pmt, rate, irr, or npv"),
+    ],
+    rate: Annotated[
+        float | None,
+        Field(description="Interest/discount rate per period (e.g., 0.05 for 5% annual)"),
+    ] = None,
     periods: Annotated[int | None, Field(description="Number of compounding periods", ge=1)] = None,
-    payment: Annotated[float | None, Field(description="Regular periodic payment (negative=pay out, positive=receive)")] = None,
-    present_value: Annotated[float | None, Field(description="Single lump sum at time 0 (negative=pay, positive=receive)")] = None,
-    future_value: Annotated[float | None, Field(description="Single lump sum at maturity (negative=owe, positive=receive)")] = None,
-    cash_flows: Annotated[Union[str, List[float], None], Field(description="Series of cash flows for IRR/NPV (e.g., [-100, 30, 30, 130])")] = None,
-    when: Annotated[Literal["end", "begin"], Field(description="Payment timing: 'end' (ordinary) or 'begin' (annuity due)")] = "end",
-    growth_rate: Annotated[float, Field(description="Payment growth rate per period (0.0 for level annuity)", ge=0)] = 0.0,
+    payment: Annotated[
+        float | None,
+        Field(description="Regular periodic payment (negative=pay out, positive=receive)"),
+    ] = None,
+    present_value: Annotated[
+        float | None,
+        Field(description="Single lump sum at time 0 (negative=pay, positive=receive)"),
+    ] = None,
+    future_value: Annotated[
+        float | None,
+        Field(description="Single lump sum at maturity (negative=owe, positive=receive)"),
+    ] = None,
+    cash_flows: Annotated[
+        Union[str, List[float], None],
+        Field(description="Series of cash flows for IRR/NPV (e.g., [-100, 30, 30, 130])"),
+    ] = None,
+    when: Annotated[
+        Literal["end", "begin"],
+        Field(description="Payment timing: 'end' (ordinary) or 'begin' (annuity due)"),
+    ] = "end",
+    growth_rate: Annotated[
+        float, Field(description="Payment growth rate per period (0.0 for level annuity)", ge=0)
+    ] = 0.0,
 ) -> str:
     """Time Value of Money calculations."""
     try:
@@ -81,9 +104,7 @@ async def financial_calcs(
 
             # Ensure at least one component was provided
             if future_value is None and payment is None:
-                raise ValueError(
-                    "PV: provide rate + periods + (future_value AND/OR payment)"
-                )
+                raise ValueError("PV: provide rate + periods + (future_value AND/OR payment)")
 
             # Handle growing annuity case
             if growth_rate != 0.0 and payment is not None and payment != 0:
@@ -99,11 +120,11 @@ async def financial_calcs(
                 else:
                     # Standard growing annuity formula
                     growth_factor = (1 + growth_rate) / (1 + rate)
-                    pv_annuity = payment_abs * (1 - growth_factor ** periods) / (rate - growth_rate)
+                    pv_annuity = payment_abs * (1 - growth_factor**periods) / (rate - growth_rate)
 
                 # Adjust for annuity due
                 if when == "begin":
-                    pv_annuity *= (1 + rate)
+                    pv_annuity *= 1 + rate
 
                 # Apply sign: payment < 0 (pay out) → PV > 0 (value received)
                 pv_annuity = pv_annuity if payment < 0 else -pv_annuity
@@ -119,10 +140,11 @@ async def financial_calcs(
             else:
                 # Use numpy-financial for standard (non-growing) calculation
                 result = npf.pv(
-                    rate, periods,
+                    rate,
+                    periods,
                     float(payment) if payment is not None else 0.0,
                     float(future_value) if future_value is not None else 0.0,  # type: ignore[arg-type]
-                    when=when
+                    when=when,
                 )
 
         elif calculation == "rate":
@@ -141,7 +163,7 @@ async def financial_calcs(
                 float(payment) if payment is not None else 0.0,
                 present_value,
                 float(future_value) if future_value is not None else 0.0,
-                when=when
+                when=when,
             )
 
         elif calculation == "fv":
@@ -164,11 +186,14 @@ async def financial_calcs(
                     fv_annuity = payment_abs * periods * ((1 + rate) ** (periods - 1))
                 else:
                     # Standard growing annuity FV formula
-                    fv_annuity = payment_abs * (((1 + rate) ** periods - (1 + growth_rate) ** periods) / (rate - growth_rate))
+                    fv_annuity = payment_abs * (
+                        ((1 + rate) ** periods - (1 + growth_rate) ** periods)
+                        / (rate - growth_rate)
+                    )
 
                 # Adjust for annuity due
                 if when == "begin":
-                    fv_annuity *= (1 + rate)
+                    fv_annuity *= 1 + rate
 
                 # Apply sign: payment < 0 (pay) → FV > 0 (accumulate)
                 fv_annuity = fv_annuity if payment < 0 else -fv_annuity
@@ -182,9 +207,11 @@ async def financial_calcs(
             else:
                 # Use numpy-financial for standard (non-growing) calculation
                 result = npf.fv(
-                    rate, periods, payment,
+                    rate,
+                    periods,
+                    payment,
                     float(present_value) if present_value is not None else 0.0,
-                    when=when
+                    when=when,
                 )
 
         elif calculation == "pmt":
@@ -196,9 +223,11 @@ async def financial_calcs(
 
             # Use numpy-financial for battle-tested calculation
             result = npf.pmt(
-                rate, periods, present_value,
+                rate,
+                periods,
+                present_value,
                 float(future_value) if future_value is not None else 0.0,  # type: ignore[arg-type]
-                when=when
+                when=when,
             )
 
         elif calculation == "irr":
@@ -278,7 +307,10 @@ async def compound_interest(
     principal: Annotated[float, Field(description="Initial principal amount (e.g., 1000)")],
     rate: Annotated[float, Field(description="Annual interest rate (e.g., 0.05 for 5%)")],
     time: Annotated[float, Field(description="Time period in years (e.g., 10)", ge=0)],
-    frequency: Annotated[Literal["annual", "semi-annual", "quarterly", "monthly", "daily", "continuous"], Field(description="Compounding frequency")] = "annual",
+    frequency: Annotated[
+        Literal["annual", "semi-annual", "quarterly", "monthly", "daily", "continuous"],
+        Field(description="Compounding frequency"),
+    ] = "annual",
 ) -> str:
     """Calculate compound interest."""
     try:
@@ -351,8 +383,15 @@ PERPETUITY DUE: £1000 at period start at 5%
 async def perpetuity(
     payment: Annotated[float, Field(description="Periodic payment amount (e.g., 1000)")],
     rate: Annotated[float, Field(description="Discount rate per period (e.g., 0.05)", gt=0)],
-    growth_rate: Annotated[float | None, Field(description="Payment growth rate (None or 0 for level, e.g., 0.03 for growing)", ge=0)] = None,
-    when: Annotated[Literal["end", "begin"], Field(description="Payment timing: 'end' or 'begin'")] = "end",
+    growth_rate: Annotated[
+        float | None,
+        Field(
+            description="Payment growth rate (None or 0 for level, e.g., 0.03 for growing)", ge=0
+        ),
+    ] = None,
+    when: Annotated[
+        Literal["end", "begin"], Field(description="Payment timing: 'end' or 'begin'")
+    ] = "end",
 ) -> str:
     """Calculate present value of perpetuity."""
     try:
@@ -398,5 +437,3 @@ async def perpetuity(
 
     except Exception as e:
         raise ValueError(f"Perpetuity calculation failed: {str(e)}")
-
-

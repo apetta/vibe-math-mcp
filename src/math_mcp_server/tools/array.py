@@ -1,6 +1,6 @@
 """Array calculation tools using Polars for optimal performance."""
 
-from typing import Annotated, List, Literal, Optional, Union, cast
+from typing import Annotated, List, Literal, Union, cast
 from pydantic import Field
 from mcp.types import ToolAnnotations
 import json
@@ -40,9 +40,15 @@ ARRAY DIVISION:
     ),
 )
 async def array_operations(
-    operation: Annotated[Literal["add", "subtract", "multiply", "divide", "power"], Field(description="Element-wise operation to perform")],
+    operation: Annotated[
+        Literal["add", "subtract", "multiply", "divide", "power"],
+        Field(description="Element-wise operation to perform"),
+    ],
     array1: Annotated[List[List[float]], Field(description="First 2D array (e.g., [[1,2],[3,4]])")],
-    array2: Annotated[Union[str, List[List[float]], float], Field(description="Second array, scalar, or JSON string")],
+    array2: Annotated[
+        Union[str, List[List[float]], float],
+        Field(description="Second array, scalar, or JSON string"),
+    ],
 ) -> str:
     """Element-wise array operations."""
     try:
@@ -119,8 +125,13 @@ MULTIPLE STATISTICS:
 )
 async def array_statistics(
     data: Annotated[List[List[float]], Field(description="2D array (e.g., [[1,2,3],[4,5,6]])")],
-    operations: Annotated[List[Literal["mean", "median", "std", "min", "max", "sum"]], Field(description="Statistics to compute (e.g., ['mean','std'])")],
-    axis: Annotated[int | None, Field(description="Axis: 0=column-wise, 1=row-wise, None=overall")] = None,
+    operations: Annotated[
+        List[Literal["mean", "median", "std", "min", "max", "sum"]],
+        Field(description="Statistics to compute (e.g., ['mean','std'])"),
+    ],
+    axis: Annotated[
+        int | None, Field(description="Axis: 0=column-wise, 1=row-wise, None=overall")
+    ] = None,
 ) -> str:
     """Calculate array statistics."""
     try:
@@ -207,10 +218,19 @@ GRADE CALCULATION:
     ),
 )
 async def array_aggregate(
-    operation: Annotated[Literal["sumproduct", "weighted_average", "dot_product"], Field(description="Aggregation operation")],
+    operation: Annotated[
+        Literal["sumproduct", "weighted_average", "dot_product"],
+        Field(description="Aggregation operation"),
+    ],
     array1: Annotated[List[float], Field(description="First 1D array (e.g., [1,2,3])")],
-    array2: Annotated[Union[str, List[float], None], Field(description="Second 1D array for sumproduct/dot_product")] = None,
-    weights: Annotated[Union[str, List[float], None], Field(description="Weights for weighted_average (e.g., [1,2,3])")] = None,
+    array2: Annotated[
+        Union[str, List[float], None],
+        Field(description="Second 1D array for sumproduct/dot_product"),
+    ] = None,
+    weights: Annotated[
+        Union[str, List[float], None],
+        Field(description="Weights for weighted_average (e.g., [1,2,3])"),
+    ] = None,
 ) -> str:
     """Aggregate 1D arrays."""
     try:
@@ -282,9 +302,16 @@ LOG TRANSFORM:
     ),
 )
 async def array_transform(
-    data: Annotated[List[List[float]], Field(description="2D array to transform (e.g., [[1,2],[3,4]])")],
-    transform: Annotated[Literal["normalize", "standardize", "minmax_scale", "log_transform"], Field(description="Transformation type")],
-    axis: Annotated[int | None, Field(description="Axis: 0=column-wise, 1=row-wise, None=overall")] = None,
+    data: Annotated[
+        List[List[float]], Field(description="2D array to transform (e.g., [[1,2],[3,4]])")
+    ],
+    transform: Annotated[
+        Literal["normalize", "standardize", "minmax_scale", "log_transform"],
+        Field(description="Transformation type"),
+    ],
+    axis: Annotated[
+        int | None, Field(description="Axis: 0=column-wise, 1=row-wise, None=overall")
+    ] = None,
 ) -> str:
     """Transform arrays."""
     try:
