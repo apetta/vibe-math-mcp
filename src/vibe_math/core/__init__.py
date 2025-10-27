@@ -14,6 +14,9 @@ from .converters import (
     list_to_numpy,
     numpy_to_list,
 )
+from .batch_models import BatchOperation, OperationResult, BatchSummary, BatchResponse
+from .batch_executor import BatchExecutor
+from .result_resolver import ResultResolver, resolve_batch_arguments
 
 __all__ = [
     # Validators
@@ -32,4 +35,12 @@ __all__ = [
     "polars_to_pandas",
     "list_to_numpy",
     "numpy_to_list",
+    # Batch execution
+    "BatchOperation",
+    "OperationResult",
+    "BatchSummary",
+    "BatchResponse",
+    "BatchExecutor",
+    "ResultResolver",
+    "resolve_batch_arguments",
 ]

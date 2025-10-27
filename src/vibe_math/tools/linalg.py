@@ -159,7 +159,7 @@ async def solve_linear_system(
                 raise ValueError("System is singular or poorly conditioned")
 
         elif method == "least_squares":
-            x, residuals, rank, _s = la.lstsq(A, b)  # type: ignore[misc]
+            x, residuals, rank, _ = la.lstsq(A, b)  # type: ignore[misc]
             metadata = {
                 "method": method,
                 "rank": int(rank),

@@ -1,7 +1,7 @@
 """Basic mathematical calculation tools."""
 
 import math
-from typing import Annotated, Dict, Literal, Optional, Union, List
+from typing import Annotated, Dict, Literal, Union, List
 from pydantic import Field
 from sympy import sympify, simplify, N
 from mcp.types import ToolAnnotations
