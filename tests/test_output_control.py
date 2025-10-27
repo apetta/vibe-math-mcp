@@ -410,3 +410,126 @@ class TestFinalMode:
 
         assert "result" in result
         assert result["result"] == 42.0
+
+
+class TestContextPreservation:
+    """Test context preservation across all output modes."""
+
+    def test_batch_context_in_value_mode(self):
+        """Test batch-level context appears in value mode."""
+        data = {
+            "results": [
+                {"id": "op1", "status": "success", "result": {"result": 100.0}, "dependencies": []}
+            ],
+            "summary": {"succeeded": 1, "failed": 0},
+            "context": "Q4 2025 Portfolio"
+        }
+        result = transform_batch_response(data, "value")
+
+        assert "context" in result
+        assert result["context"] == "Q4 2025 Portfolio"
+        assert "op1" in result
+        assert result["op1"] == 100.0
+
+    def test_batch_context_in_minimal_mode(self):
+        """Test batch-level context appears in minimal mode."""
+        data = {
+            "results": [
+                {"id": "op1", "status": "success", "result": {"result": 100.0}, "dependencies": []}
+            ],
+            "summary": {"succeeded": 1, "failed": 0},
+            "context": "Q4 2025 Portfolio"
+        }
+        result = transform_batch_response(data, "minimal")
+
+        assert "context" in result
+        assert result["context"] == "Q4 2025 Portfolio"
+
+    def test_batch_context_in_compact_mode(self):
+        """Test batch-level context appears in compact mode."""
+        data = {
+            "results": [
+                {"id": "op1", "status": "success", "result": {"result": 100.0}, "dependencies": []}
+            ],
+            "summary": {"succeeded": 1, "failed": 0},
+            "context": "Q4 2025 Portfolio"
+        }
+        result = transform_batch_response(data, "compact")
+
+        assert "context" in result
+        assert result["context"] == "Q4 2025 Portfolio"
+
+    def test_batch_context_in_final_mode(self):
+        """Test batch-level context appears in final mode."""
+        data = {
+            "results": [
+                {"id": "op1", "status": "success", "result": {"result": 100.0}, "dependencies": []}
+            ],
+            "summary": {"succeeded": 1, "failed": 0},
+            "context": "Q4 2025 Portfolio"
+        }
+        result = transform_batch_response(data, "final")
+
+        assert "context" in result
+        assert result["context"] == "Q4 2025 Portfolio"
+        assert "result" in result
+        assert result["result"] == 100.0
+
+    def test_step_context_in_minimal_mode(self):
+        """Test step-level context appears in minimal mode."""
+        data = {
+            "results": [
+                {
+                    "id": "bond_a",
+                    "status": "success",
+                    "result": {"result": 1081.11, "context": "UK Government Bond"},
+                    "dependencies": []
+                }
+            ],
+            "summary": {"succeeded": 1, "failed": 0}
+        }
+        result = transform_batch_response(data, "minimal")
+
+        assert len(result["results"]) == 1
+        op = result["results"][0]
+        assert "context" in op
+        assert op["context"] == "UK Government Bond"
+
+    def test_both_contexts_together(self):
+        """Test both batch and step contexts preserved."""
+        data = {
+            "results": [
+                {
+                    "id": "bond_a",
+                    "status": "success",
+                    "result": {"result": 1081.11, "context": "UK Gov Bond"},
+                    "dependencies": []
+                },
+                {
+                    "id": "bond_b",
+                    "status": "success",
+                    "result": {"result": 1000.0, "context": "Corporate Bond"},
+                    "dependencies": []
+                }
+            ],
+            "summary": {"succeeded": 2, "failed": 0},
+            "context": "Q4 2025 Portfolio Analysis"
+        }
+        result = transform_batch_response(data, "minimal")
+
+        assert "context" in result
+        assert result["context"] == "Q4 2025 Portfolio Analysis"
+        assert result["results"][0]["context"] == "UK Gov Bond"
+        assert result["results"][1]["context"] == "Corporate Bond"
+
+    def test_no_context_field_when_none(self):
+        """Test context field omitted when not provided."""
+        data = {
+            "results": [
+                {"id": "op1", "status": "success", "result": {"result": 100.0}, "dependencies": []}
+            ],
+            "summary": {"succeeded": 1, "failed": 0}
+        }
+        result = transform_batch_response(data, "value")
+
+        assert "context" not in result

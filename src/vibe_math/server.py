@@ -132,6 +132,7 @@ def transform_batch_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
     """
     results = data.get("results", [])
     summary = data.get("summary", {})
+    batch_context = data.get("context")
 
     if mode == "final":
         if is_sequential_chain(results):
@@ -140,7 +141,7 @@ def transform_batch_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
                 terminal = next((r for r in results if r["id"] == terminal_id), None)
 
                 if terminal and terminal.get("status") == "success":
-                    return {
+                    result = {
                         "result": extract_primary_value(terminal["result"]),
                         "summary": {
                             "succeeded": summary.get("succeeded", 0),
@@ -148,8 +149,11 @@ def transform_batch_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
                             "time_ms": summary.get("total_execution_time_ms", 0),
                         }
                     }
+                    if batch_context is not None:
+                        result["context"] = batch_context
+                    return result
                 elif terminal and terminal.get("status") == "error":
-                    return {
+                    result = {
                         "error": terminal["error"].get("message", "Unknown error"),
                         "summary": {
                             "succeeded": summary.get("succeeded", 0),
@@ -157,18 +161,20 @@ def transform_batch_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
                             "time_ms": summary.get("total_execution_time_ms", 0),
                         }
                     }
+                    if batch_context is not None:
+                        result["context"] = batch_context
+                    return result
 
         return transform_batch_response(data, "value")
 
     if mode == "value":
-        # Flat {id: value} mapping + minimal summary
         value_map = {}
         for r in results:
             if r.get("status") == "success" and r.get("result"):
                 op_id = r["id"]
                 value_map[op_id] = extract_primary_value(r["result"])
 
-        return {
+        result = {
             **value_map,
             "summary": {
                 "succeeded": summary.get("succeeded", 0),
@@ -176,9 +182,11 @@ def transform_batch_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
                 "time_ms": summary.get("total_execution_time_ms", 0),
             }
         }
+        if batch_context is not None:
+            result["context"] = batch_context
+        return result
 
     if mode == "minimal":
-        # Simplified operation objects
         minimal_results = []
         for r in results:
             minimal_op = {
@@ -189,26 +197,33 @@ def transform_batch_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
 
             if r.get("status") == "success" and r.get("result"):
                 minimal_op["value"] = extract_primary_value(r["result"])
+                if "context" in r["result"] and r["result"]["context"] is not None:
+                    minimal_op["context"] = r["result"]["context"]
             elif r.get("error"):
                 minimal_op["error"] = r["error"].get("message", "Unknown error")
 
             minimal_results.append(minimal_op)
 
-        return {
+        result = {
             "results": minimal_results,
             "summary": summary
         }
+        if batch_context is not None:
+            result["context"] = batch_context
+        return result
 
     if mode == "compact":
-        # Remove nulls from each result
         compact_results = [
             {k: v for k, v in r.items() if v is not None}
             for r in results
         ]
-        return {
+        result = {
             "results": compact_results,
             "summary": summary
         }
+        if batch_context is not None:
+            result["context"] = batch_context
+        return result
 
     # full mode - return as-is
     return data
