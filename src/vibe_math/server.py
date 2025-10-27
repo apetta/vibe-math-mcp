@@ -1,9 +1,10 @@
 """Vibe Math - High-performance mathematical operations using Polars and scientific Python."""
 
 import json
-from typing import Any
+from typing import Annotated, Any
 
 from fastmcp import FastMCP
+from pydantic import Field
 from fastmcp.tools import Tool
 from fastmcp.tools.tool_transform import forward
 from mcp.types import TextContent
@@ -38,7 +39,16 @@ class CustomMCP(FastMCP):
 
         # Define the transform function that adds context parameter
         async def context_transform(
-            context: str | None = None,
+            context: Annotated[
+                str | None,
+                Field(
+                    description=(
+                        "Optional annotation to label this calculation "
+                        "(e.g., 'Bond A PV', 'Q2 revenue'). "
+                        "Appears in results for easy identification."
+                    )
+                )
+            ] = None,
             **kwargs: Any
         ) -> str:
             """Transform function that injects context into tool results.
