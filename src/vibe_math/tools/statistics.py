@@ -6,7 +6,7 @@ from mcp.types import ToolAnnotations
 import polars as pl
 
 from ..server import mcp
-from ..core import format_result, format_json
+from ..core import format_result
 
 
 @mcp.tool(
@@ -94,7 +94,7 @@ async def statistics(
                 "outlier_count": len(outliers_df),
             }
 
-        return format_json(results)
+        return format_result(results, {})
     except Exception as e:
         raise ValueError(f"Statistical analysis failed: {str(e)}")
 

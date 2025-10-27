@@ -28,11 +28,11 @@ class TestResultResolver:
 
     def test_array_indexing(self):
         """Test array indexing in references."""
-        results = {"op1": {"values": [[1, 2], [3, 4]]}}
+        results = {"op1": {"result": [[1, 2], [3, 4]]}}
         resolver = ResultResolver(results)
 
-        assert resolver.resolve("$op1.values[0]") == [1, 2]
-        assert resolver.resolve("$op1.values[1][0]") == 3
+        assert resolver.resolve("$op1.result[0]") == [1, 2]
+        assert resolver.resolve("$op1.result[1][0]") == 3
 
     def test_dict_resolution(self):
         """Test recursive resolution in dictionaries."""

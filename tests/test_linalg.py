@@ -13,7 +13,7 @@ async def test_matrix_multiply(mcp_client, sample_array_2x2):
     )
     data = json.loads(result.content[0].text)
     # [[1,2],[3,4]] * [[1,2],[3,4]] = [[7,10],[15,22]]
-    assert data["values"] == [[7.0, 10.0], [15.0, 22.0]]
+    assert data["result"] == [[7.0, 10.0], [15.0, 22.0]]
 
 
 @pytest.mark.asyncio
@@ -23,7 +23,7 @@ async def test_matrix_transpose(mcp_client, sample_array_2x2):
         "matrix_operations", {"operation": "transpose", "matrix1": sample_array_2x2}
     )
     data = json.loads(result.content[0].text)
-    assert data["values"] == [[1.0, 3.0], [2.0, 4.0]]
+    assert data["result"] == [[1.0, 3.0], [2.0, 4.0]]
 
 
 @pytest.mark.asyncio
@@ -97,10 +97,10 @@ async def test_matrix_inverse_2x2(mcp_client):
     )
     data = json.loads(result.content[0].text)
     # Verify inverse exists and has correct shape
-    assert len(data["values"]) == 2
-    assert len(data["values"][0]) == 2
+    assert len(data["result"]) == 2
+    assert len(data["result"][0]) == 2
     # For [[4,7],[2,6]], det = 24-14 = 10, inverse = [[0.6,-0.7],[-0.2,0.4]]
-    assert abs(data["values"][0][0] - 0.6) < 1e-10
+    assert abs(data["result"][0][0] - 0.6) < 1e-10
 
 
 @pytest.mark.asyncio
@@ -112,8 +112,8 @@ async def test_matrix_inverse_3x3(mcp_client):
     )
     data = json.loads(result.content[0].text)
     # Verify inverse has correct shape
-    assert len(data["values"]) == 3
-    assert len(data["values"][0]) == 3
+    assert len(data["result"]) == 3
+    assert len(data["result"][0]) == 3
 
 
 @pytest.mark.asyncio

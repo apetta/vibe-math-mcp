@@ -331,18 +331,11 @@ Chain operations using `$operation_id.result` syntax:
 
 #### Result Referencing Syntax
 
-**Universal Accessor (Recommended):**
-- `$op_id.value` - Smart accessor that works with any tool
-
-**Legacy Accessors:**
-- `$op_id.result` - For tools with "result" field
-- `$op_id.values` - For tools with "values" field
+**Standard Accessors:**
+- `$op_id.result` - Main result value from any tool
 - `$op_id.metadata.field` - Nested metadata access
-- `$op_id.values[0]` - Array indexing
+- `$op_id.result[0]` - Array indexing
 - `$op_id` - Entire result object
-
-**Why use `.value`?**
-Different tools return values in different fields (`result` vs `values`). The universal `.value` accessor automatically detects and extracts the primary value from any tool, eliminating guesswork when chaining operations.
 
 #### Execution Modes
 
@@ -424,8 +417,8 @@ For simple calculations that form a chain (step1 → step2 → step3), use `fina
 {
   "operations": [
     {"id": "step1", "tool": "calculate", "arguments": {"expression": "1000 * 1.05"}},
-    {"id": "step2", "tool": "calculate", "arguments": {"expression": "$step1.value * 1.10"}, "depends_on": ["step1"]},
-    {"id": "step3", "tool": "round", "arguments": {"values": "$step2.value", "decimals": 2}, "depends_on": ["step2"]}
+    {"id": "step2", "tool": "calculate", "arguments": {"expression": "$step1.result * 1.10"}, "depends_on": ["step1"]},
+    {"id": "step3", "tool": "round", "arguments": {"values": "$step2.result", "decimals": 2}, "depends_on": ["step2"]}
   ],
   "output_mode": "final"
 }
@@ -454,27 +447,27 @@ Different tool categories return different response structures. Here's your quic
 | - percentage          |               |                            |                          |
 | - round               |               |                            |                          |
 | - convert_units       |               |                            |                          |
-| **Arrays**            | `values`      | `response["values"]`       | `{"values": [[1,2],[3,4]]}` |
+| **Arrays**            | `result`      | `response["result"]`       | `{"result": [[1,2],[3,4]]}` |
 | - array_operations    |               |                            |                          |
 | - array_statistics    |               |                            |                          |
 | - array_aggregate     |               |                            |                          |
 | - array_transform     |               |                            |                          |
-| **Statistics**        | Multiple keys | `response["describe"]["mean"]` | Full object (already minimal) |
-| - statistics          | `describe`, `quartiles`, `outliers` | | |
-| - pivot_table         | Pivot structure | | |
-| - correlation         | Correlation matrix | | |
+| **Statistics**        | `result`      | `response["result"]["describe"]["mean"]` | `{"result": {...}}` |
+| - statistics          |               | Nested objects within result | |
+| - pivot_table         |               | Pivot structure in result | |
+| - correlation         |               | Correlation matrix in result | |
 | **Financial**         | `result`      | `response["result"]`       | `{"result": 1628.89}`    |
 | - financial_calcs     |               |                            |                          |
 | - compound_interest   |               |                            |                          |
 | - perpetuity          |               |                            |                          |
-| **Linear Algebra**    | `result` or `values` | Tool-specific       | Tool-specific            |
-| - matrix_operations   | `values` for matrices | `response["values"]` | |
-| - solve_linear_system | `result` (solution vector) | `response["result"]` | |
-| - matrix_decomposition | Multiple keys | `response["eigenvalues"]` | |
-| **Calculus**          | `result` or symbolic | Tool-specific       | Tool-specific            |
-| - derivative          | `result` (symbolic expression) | | |
-| - integral            | `result` (value or symbolic) | | |
-| - limits_series       | `result` | | |
+| **Linear Algebra**    | `result`      | `response["result"]`       | `{"result": [[...]]}` or scalar |
+| - matrix_operations   |               | Matrices in result | |
+| - solve_linear_system |               | Solution vector in result | |
+| - matrix_decomposition |              | Components (U, S, V) in result | |
+| **Calculus**          | `result`      | `response["result"]`       | `{"result": "6*x + 4"}` |
+| - derivative          |               | Symbolic expression | |
+| - integral            |               | Value or symbolic | |
+| - limits_series       |               | | |
 
 **With `output_mode="value"`:** All tools normalize to `{"value": X}` for consistent chaining!
 
@@ -509,24 +502,22 @@ const finalAnswer = response.final;  // 90.5
 ### Pattern 2: Chain with Consistent Structure
 
 ```json
-// Use value mode for consistent {value: X} across all tools
+// All tools now use consistent {"result": X} structure
 {
   "tool": "calculate",
-  "expression": "2 + 2",
-  "output_mode": "value"
+  "expression": "2 + 2"
 }
-// Returns: {"value": 4}
+// Returns: {"result": 4}
 
 {
   "tool": "array_operations",
   "operation": "add",
   "array1": [[1,2]],
-  "array2": [[3,4]],
-  "output_mode": "value"
+  "array2": [[3,4]]
 }
-// Returns: {"value": [[4,6]]}
+// Returns: {"result": [[4,6]]}
 
-// Now you can reference "$op.value" consistently!
+// Now you can reference "$op.result" consistently across all tools!
 ```
 
 ### Pattern 3: Debugging with Full Context

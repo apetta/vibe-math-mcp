@@ -54,21 +54,6 @@ def find_terminal_operation(results: list) -> str | None:
     return terminals[0] if len(terminals) == 1 else None
 
 
-def extract_primary_value(data: Dict[str, Any]) -> Any:
-    """Extract the primary value from a tool response.
-
-    Intelligently detects the main value field based on response structure:
-    - Basic/Financial tools: data["result"]
-    - Array tools: data["values"]
-    - Stats tools: entire object (multiple values)
-    """
-    if "result" in data:
-        return data["result"]
-    elif "values" in data:
-        return data["values"]
-    else:
-        # Stats tools or complex responses - return entire object
-        return data
 
 
 def transform_single_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
@@ -92,14 +77,8 @@ def transform_single_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]
         return {k: v for k, v in data.items() if v is not None}
 
     if mode == "minimal":
-        # Keep only primary field + context if present
-        if "result" in data:
-            minimal = {"result": data["result"]}
-        elif "values" in data:
-            minimal = {"values": data["values"]}
-        else:
-            # Stats tools - already minimal (multiple result fields)
-            minimal = data
+        # Keep only result + context if present
+        minimal = {"result": data["result"]}
 
         # Preserve context if present
         if "context" in data:
@@ -108,8 +87,7 @@ def transform_single_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]
 
     if mode == "value":
         # Normalize to {value: X} structure
-        extracted = extract_primary_value(data)
-        result = {"value": extracted}
+        result = {"value": data["result"]}
 
         # Preserve context if present
         if "context" in data:
@@ -142,7 +120,7 @@ def transform_batch_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
 
                 if terminal and terminal.get("status") == "success":
                     result = {
-                        "result": extract_primary_value(terminal["result"]),
+                        "result": terminal["result"]["result"],
                         "summary": {
                             "succeeded": summary.get("succeeded", 0),
                             "failed": summary.get("failed", 0),
@@ -172,7 +150,7 @@ def transform_batch_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
         for r in results:
             if r.get("status") == "success" and r.get("result"):
                 op_id = r["id"]
-                value_map[op_id] = extract_primary_value(r["result"])
+                value_map[op_id] = r["result"]["result"]
 
         result = {
             **value_map,
@@ -196,7 +174,7 @@ def transform_batch_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
             }
 
             if r.get("status") == "success" and r.get("result"):
-                minimal_op["value"] = extract_primary_value(r["result"])
+                minimal_op["value"] = r["result"]["result"]
                 if "context" in r["result"] and r["result"]["context"] is not None:
                     minimal_op["context"] = r["result"]["context"]
             elif r.get("error"):

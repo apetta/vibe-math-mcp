@@ -11,7 +11,7 @@ async def test_array_operations_multiply_scalar(mcp_client, sample_array_2x2):
         "array_operations", {"operation": "multiply", "array1": sample_array_2x2, "array2": 2}
     )
     data = json.loads(result.content[0].text)
-    assert data["values"] == [[2.0, 4.0], [6.0, 8.0]]
+    assert data["result"] == [[2.0, 4.0], [6.0, 8.0]]
 
 
 @pytest.mark.asyncio
@@ -22,7 +22,7 @@ async def test_array_operations_add(mcp_client, sample_array_2x2):
         {"operation": "add", "array1": sample_array_2x2, "array2": sample_array_2x2},
     )
     data = json.loads(result.content[0].text)
-    assert data["values"] == [[2.0, 4.0], [6.0, 8.0]]
+    assert data["result"] == [[2.0, 4.0], [6.0, 8.0]]
 
 
 @pytest.mark.asyncio
@@ -79,8 +79,8 @@ async def test_array_transform_normalize(mcp_client, sample_array_2x2):
     )
     data = json.loads(result.content[0].text)
     # Result should be normalized (check that it's a valid array)
-    assert len(data["values"]) == 2
-    assert len(data["values"][0]) == 2
+    assert len(data["result"]) == 2
+    assert len(data["result"][0]) == 2
 
 
 @pytest.mark.asyncio
@@ -91,8 +91,8 @@ async def test_array_transform_standardize(mcp_client, sample_array_2x2):
     )
     data = json.loads(result.content[0].text)
     # Check structure
-    assert len(data["values"]) == 2
-    assert len(data["values"][0]) == 2
+    assert len(data["result"]) == 2
+    assert len(data["result"][0]) == 2
 
 
 @pytest.mark.asyncio
@@ -102,7 +102,7 @@ async def test_array_operations_subtract_scalar(mcp_client, sample_array_2x2):
         "array_operations", {"operation": "subtract", "array1": sample_array_2x2, "array2": 1}
     )
     data = json.loads(result.content[0].text)
-    assert data["values"] == [[0.0, 1.0], [2.0, 3.0]]
+    assert data["result"] == [[0.0, 1.0], [2.0, 3.0]]
 
 
 @pytest.mark.asyncio
@@ -113,7 +113,7 @@ async def test_array_operations_subtract_arrays(mcp_client, sample_array_2x2):
         "array_operations", {"operation": "subtract", "array1": sample_array_2x2, "array2": array2}
     )
     data = json.loads(result.content[0].text)
-    assert data["values"] == [[0.0, 1.0], [2.0, 3.0]]
+    assert data["result"] == [[0.0, 1.0], [2.0, 3.0]]
 
 
 @pytest.mark.asyncio
@@ -123,7 +123,7 @@ async def test_array_operations_divide_scalar(mcp_client, sample_array_2x2):
         "array_operations", {"operation": "divide", "array1": sample_array_2x2, "array2": 2}
     )
     data = json.loads(result.content[0].text)
-    assert data["values"] == [[0.5, 1.0], [1.5, 2.0]]
+    assert data["result"] == [[0.5, 1.0], [1.5, 2.0]]
 
 
 @pytest.mark.asyncio
@@ -145,7 +145,7 @@ async def test_array_operations_divide_arrays(mcp_client):
         "array_operations", {"operation": "divide", "array1": array1, "array2": array2}
     )
     data = json.loads(result.content[0].text)
-    assert data["values"] == [[5.0, 5.0], [6.0, 5.0]]
+    assert data["result"] == [[5.0, 5.0], [6.0, 5.0]]
 
 
 @pytest.mark.asyncio
@@ -155,7 +155,7 @@ async def test_array_operations_power_scalar(mcp_client, sample_array_2x2):
         "array_operations", {"operation": "power", "array1": sample_array_2x2, "array2": 2}
     )
     data = json.loads(result.content[0].text)
-    assert data["values"] == [[1.0, 4.0], [9.0, 16.0]]
+    assert data["result"] == [[1.0, 4.0], [9.0, 16.0]]
 
 
 @pytest.mark.asyncio
@@ -167,7 +167,7 @@ async def test_array_operations_power_arrays(mcp_client):
         "array_operations", {"operation": "power", "array1": array1, "array2": array2}
     )
     data = json.loads(result.content[0].text)
-    assert data["values"] == [[4.0, 9.0], [16.0, 25.0]]
+    assert data["result"] == [[4.0, 9.0], [16.0, 25.0]]
 
 
 @pytest.mark.asyncio
@@ -335,7 +335,7 @@ async def test_array_transform_minmax_scale_none(mcp_client):
     result_data = json.loads(result.content[0].text)
     # Min=1, Max=4, range=3
     # Scaled values should be in [0, 1]
-    flat_values = [val for row in result_data["values"] for val in row]
+    flat_values = [val for row in result_data["result"] for val in row]
     assert min(flat_values) == 0.0
     assert max(flat_values) == 1.0
 
@@ -350,7 +350,7 @@ async def test_array_transform_minmax_scale_axis_0(mcp_client):
     result_data = json.loads(result.content[0].text)
     # Column 1: min=1, max=5, Column 2: min=10, max=20
     # First column: [0, 1], Second column: [0, 1]
-    assert len(result_data["values"]) == 2
+    assert len(result_data["result"]) == 2
 
 
 @pytest.mark.asyncio
@@ -362,8 +362,8 @@ async def test_array_transform_minmax_scale_axis_1(mcp_client):
     )
     result_data = json.loads(result.content[0].text)
     # Each row should be scaled independently
-    assert len(result_data["values"]) == 2
-    assert len(result_data["values"][0]) == 2
+    assert len(result_data["result"]) == 2
+    assert len(result_data["result"][0]) == 2
 
 
 @pytest.mark.asyncio
@@ -375,10 +375,10 @@ async def test_array_transform_log_transform(mcp_client):
     )
     result_data = json.loads(result.content[0].text)
     # Result should contain positive values (log1p of positive numbers)
-    assert len(result_data["values"]) == 2
-    assert len(result_data["values"][0]) == 2
+    assert len(result_data["result"]) == 2
+    assert len(result_data["result"][0]) == 2
     # All values should be positive (log1p of positive inputs)
-    for row in result_data["values"]:
+    for row in result_data["result"]:
         for val in row:
             assert val > 0
 
@@ -392,7 +392,7 @@ async def test_array_transform_normalize_axis_0(mcp_client):
     )
     result_data = json.loads(result.content[0].text)
     # Each column should have unit norm
-    assert len(result_data["values"]) == 2
+    assert len(result_data["result"]) == 2
 
 
 @pytest.mark.asyncio
@@ -404,7 +404,7 @@ async def test_array_transform_standardize_axis_1(mcp_client):
     )
     result_data = json.loads(result.content[0].text)
     # Each row should be standardized independently
-    assert len(result_data["values"]) == 2
+    assert len(result_data["result"]) == 2
 
 
 @pytest.mark.asyncio
@@ -416,4 +416,4 @@ async def test_array_transform_zero_range_edge_case(mcp_client):
     )
     result_data = json.loads(result.content[0].text)
     # When all values are the same, range is 0, should handle gracefully
-    assert len(result_data["values"]) == 2
+    assert len(result_data["result"]) == 2

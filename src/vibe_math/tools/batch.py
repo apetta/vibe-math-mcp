@@ -103,11 +103,9 @@ Each operation requires:
 
 ## Result Referencing
 Reference prior results in arguments:
-- `$op_id.value` - Universal accessor (recommended - works with any tool)
-- `$op_id.result` - Direct access to "result" field (legacy)
-- `$op_id.values` - Direct access to "values" field (legacy)
+- `$op_id.result` - Main result value from any tool
 - `$op_id.metadata.field` - Nested field access
-- `$op_id.values[0]` - Array indexing
+- `$op_id.result[0]` - Array indexing
 
 ## Execution Modes
 - `sequential`: Execute in specified order
@@ -122,6 +120,20 @@ Reference prior results in arguments:
 - `final`: For sequential chains, return only terminal result (~95% reduction)
   (Falls back to `value` mode if operations branch or run in parallel)
 
+## Context Passthrough
+Two types of context are available:
+
+1. **Batch-level context**: Optional top-level `context` parameter labels the entire batch
+   - Appears in response root across all output modes
+   - Use for audit trails, logging, multi-tenant identification
+   - Example: `"context": "Q4 2025 Portfolio Analysis"`
+
+2. **Step-level context**: Optional `context` field in individual operations
+   - Available in: full, compact, minimal modes
+   - Use to label specific calculations
+   - Example: `{{"id": "bond_a", "context": "UK Government Bond", ...}}`
+
+
 ## Example
 ```json
 {{
@@ -130,7 +142,7 @@ Reference prior results in arguments:
     {{
       "id": "calc2",
       "tool": "calculate",
-      "arguments": {{"expression": "x * 2", "variables": {{"x": "$calc1.value"}}}},
+      "arguments": {{"expression": "x * 2", "variables": {{"x": "$calc1.result"}}}},
       "depends_on": ["calc1"]
     }}
   ],
@@ -164,10 +176,17 @@ async def batch_execute(
     ],
     execution_mode: Annotated[
         Literal["sequential", "parallel", "auto"],
-        Field(description="Execution strategy: sequential (order), parallel (concurrent), auto (DAG-based)"),
+        Field(
+            description="Execution strategy: sequential (order), parallel (concurrent), auto (DAG-based)"
+        ),
     ] = "auto",
     max_concurrent: Annotated[
-        int, Field(description="Maximum concurrent operations (applies to parallel/auto modes)", ge=1, le=20)
+        int,
+        Field(
+            description="Maximum concurrent operations (applies to parallel/auto modes)",
+            ge=1,
+            le=20,
+        ),
     ] = 5,
     stop_on_error: Annotated[
         bool,
@@ -197,10 +216,9 @@ async def batch_execute(
         # Validate tool names
         for op in operations:
             if op.tool not in tool_registry:
-                available = ', '.join(sorted(tool_registry.keys()))
+                available = ", ".join(sorted(tool_registry.keys()))
                 raise ValueError(
-                    f"Unknown tool '{op.tool}' in operation '{op.id}'. "
-                    f"Available tools: {available}"
+                    f"Unknown tool '{op.tool}' in operation '{op.id}'. Available tools: {available}"
                 )
 
         # Create executor

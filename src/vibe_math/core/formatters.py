@@ -21,7 +21,7 @@ def format_result(value: Any, metadata: Optional[Dict[str, Any]] = None) -> str:
 
 def format_array_result(values: List[Any], metadata: Optional[Dict[str, Any]] = None) -> str:
     """Format array results."""
-    result = {"values": values}
+    result = {"result": values}
 
     if metadata:
         result.update(metadata)

@@ -1,36 +1,12 @@
 """Tests for output control functionality (output_mode and extract parameters)."""
 
 from vibe_math.server import (
-    extract_primary_value,
     transform_single_response,
     transform_batch_response,
     is_sequential_chain,
     find_terminal_operation,
 )
 from vibe_math.core.result_resolver import ResultResolver
-
-
-class TestExtractPrimaryValue:
-    """Test primary value extraction from different tool responses."""
-
-    def test_extract_from_basic_tool(self):
-        """Test extraction from basic tool response (has 'result' field)."""
-        data = {"result": 105.0, "expression": "100 * 1.05", "variables": None}
-        assert extract_primary_value(data) == 105.0
-
-    def test_extract_from_array_tool(self):
-        """Test extraction from array tool response (has 'values' field)."""
-        data = {"values": [[1, 2], [3, 4]], "operation": "add", "shape": "2×2"}
-        assert extract_primary_value(data) == [[1, 2], [3, 4]]
-
-    def test_extract_from_stats_tool(self):
-        """Test extraction from stats tool (multiple result keys)."""
-        data = {
-            "describe": {"mean": 3.5, "std": 1.71},
-            "quartiles": {"Q1": 2.0, "Q3": 4.0}
-        }
-        # For stats tools with no primary field, return entire object
-        assert extract_primary_value(data) == data
 
 
 class TestTransformSingleResponse:
@@ -79,22 +55,22 @@ class TestTransformSingleResponse:
 
     def test_minimal_mode_with_array_tool(self):
         """Test minimal mode with array tool response."""
-        data = {"values": [[1, 2]], "operation": "add", "shape": "1×2"}
+        data = {"result": [[1, 2]], "operation": "add", "shape": "1×2"}
         result = transform_single_response(data, "minimal")
-        assert result == {"values": [[1, 2]]}
+        assert result == {"result": [[1, 2]]}
 
     def test_value_mode_with_array_tool(self):
         """Test value mode with array tool response."""
-        data = {"values": [[1, 2]], "operation": "add", "shape": "1×2"}
+        data = {"result": [[1, 2]], "operation": "add", "shape": "1×2"}
         result = transform_single_response(data, "value")
         assert result == {"value": [[1, 2]]}
 
     def test_stats_tool_minimal_unchanged(self):
-        """Test that stats tools remain unchanged in minimal mode."""
-        data = {"describe": {"mean": 3.5}, "quartiles": {"Q1": 2.0}}
+        """Test that stats tools are wrapped in result field."""
+        data = {"result": {"describe": {"mean": 3.5}, "quartiles": {"Q1": 2.0}}}
         result = transform_single_response(data, "minimal")
-        # Stats tools don't have a single primary field, so return all
-        assert result == data
+        # Stats tools wrap complex objects in result field
+        assert result == {"result": {"describe": {"mean": 3.5}, "quartiles": {"Q1": 2.0}}}
 
 
 class TestTransformBatchResponse:
@@ -258,41 +234,6 @@ class TestTransformBatchResponse:
         assert op["status"] == "error"
         assert op["error"] == "Invalid expression"
         assert "value" not in op
-
-
-class TestUniversalValueAccessor:
-    """Test universal .value accessor in result resolution."""
-
-    def test_value_accessor_with_result_field(self):
-        """Test .value extracts from 'result' field."""
-        results = {"op1": {"result": 105.0, "expression": "100 * 1.05"}}
-        resolver = ResultResolver(results)
-        assert resolver.resolve("$op1.value") == 105.0
-
-    def test_value_accessor_with_values_field(self):
-        """Test .value extracts from 'values' field."""
-        results = {"op1": {"values": [[1, 2], [3, 4]], "operation": "add"}}
-        resolver = ResultResolver(results)
-        assert resolver.resolve("$op1.value") == [[1, 2], [3, 4]]
-
-    def test_value_accessor_with_stats_tool(self):
-        """Test .value returns full object for stats tools."""
-        data = {"describe": {"mean": 3.5}, "quartiles": {"Q1": 2.0}}
-        results = {"op1": data}
-        resolver = ResultResolver(results)
-        assert resolver.resolve("$op1.value") == data
-
-    def test_backward_compatibility_result(self):
-        """Test .result still works as before."""
-        results = {"op1": {"result": 105.0, "expression": "100 * 1.05"}}
-        resolver = ResultResolver(results)
-        assert resolver.resolve("$op1.result") == 105.0
-
-    def test_backward_compatibility_values(self):
-        """Test .values still works as before."""
-        results = {"op1": {"values": [[1, 2]], "operation": "add"}}
-        resolver = ResultResolver(results)
-        assert resolver.resolve("$op1.values") == [[1, 2]]
 
 
 class TestFinalMode:

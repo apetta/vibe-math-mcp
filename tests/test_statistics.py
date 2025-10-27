@@ -11,10 +11,10 @@ async def test_statistics_describe(mcp_client, sample_data_list):
         "statistics", {"data": sample_data_list, "analyses": ["describe"]}
     )
     data = json.loads(result.content[0].text)
-    assert data["describe"]["count"] == 10
-    assert data["describe"]["mean"] == 5.5
-    assert data["describe"]["min"] == 1.0
-    assert data["describe"]["max"] == 10.0
+    assert data["result"]["describe"]["count"] == 10
+    assert data["result"]["describe"]["mean"] == 5.5
+    assert data["result"]["describe"]["min"] == 1.0
+    assert data["result"]["describe"]["max"] == 10.0
 
 
 @pytest.mark.asyncio
@@ -24,10 +24,10 @@ async def test_statistics_quartiles(mcp_client, sample_data_list):
         "statistics", {"data": sample_data_list, "analyses": ["quartiles"]}
     )
     data = json.loads(result.content[0].text)
-    assert "Q1" in data["quartiles"]
-    assert "Q2" in data["quartiles"]
-    assert "Q3" in data["quartiles"]
-    assert "IQR" in data["quartiles"]
+    assert "Q1" in data["result"]["quartiles"]
+    assert "Q2" in data["result"]["quartiles"]
+    assert "Q3" in data["result"]["quartiles"]
+    assert "IQR" in data["result"]["quartiles"]
 
 
 @pytest.mark.asyncio
@@ -38,7 +38,7 @@ async def test_statistics_outliers(mcp_client):
         "statistics", {"data": data_with_outliers, "analyses": ["outliers"]}
     )
     data = json.loads(result.content[0].text)
-    assert len(data["outliers"]["outlier_values"]) > 0
+    assert len(data["result"]["outliers"]["outlier_values"]) > 0
 
 
 @pytest.mark.asyncio
@@ -204,8 +204,8 @@ async def test_statistics_combined_analyses(mcp_client):
     )
     result_data = json.loads(result.content[0].text)
     # All three analyses should be present
-    assert "describe" in result_data
-    assert "quartiles" in result_data
-    assert "outliers" in result_data
+    assert "describe" in result_data["result"]
+    assert "quartiles" in result_data["result"]
+    assert "outliers" in result_data["result"]
     # Outliers should detect the 100
-    assert 100.0 in result_data["outliers"]["outlier_values"]
+    assert 100.0 in result_data["result"]["outliers"]["outlier_values"]
