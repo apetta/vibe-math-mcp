@@ -112,6 +112,17 @@ Reference prior results in arguments:
 - `parallel`: All operations run concurrently
 - `auto`: DAG-based optimization (recommended)
 
+## Output Control (via output_mode parameter)
+- `full`: Complete operation details (default)
+- `compact`: Remove nulls, minimize whitespace
+- `minimal`: Simplified operation objects with values
+- `value`: Flat {{id: value}} mapping (~90% token reduction)
+
+## Selective Extraction (via extract parameter)
+Only include specific operation IDs in response. All operations still execute (for dependencies), but response only contains requested operations.
+
+Example: `extract=["final_result"]` returns only the final_result operation.
+
 ## Example
 ```json
 {{
@@ -124,7 +135,9 @@ Reference prior results in arguments:
       "depends_on": ["calc1"]
     }}
   ],
-  "execution_mode": "auto"
+  "execution_mode": "auto",
+  "output_mode": "value",
+  "extract": ["calc2"]
 }}
 ```
 
@@ -165,6 +178,17 @@ async def batch_execute(
             )
         ),
     ] = False,
+    extract: Annotated[
+        List[str] | None,
+        Field(
+            description=(
+                "Optional: Only include these operation IDs in response. "
+                "All operations still execute (for dependencies), "
+                "but response only contains specified IDs. "
+                "Example: ['final_result', 'summary_stats']"
+            )
+        ),
+    ] = None,
 ) -> str:
     """Execute batch of mathematical operations with dependency management.
 

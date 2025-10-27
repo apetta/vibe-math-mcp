@@ -344,6 +344,186 @@ Chain operations using `$operation_id.result` syntax:
 | `parallel`   | All operations run concurrently (ignores deps)      | Independent calculations    |
 | `auto`       | Automatic DAG detection & wave-based parallelization | Mixed dependencies (default) |
 
+---
+
+## Output Control
+
+All tools automatically support output control for maximum flexibility and token efficiency.
+
+### Output Modes
+
+Control response verbosity using the `output_mode` parameter (available on **every tool**):
+
+| Mode       | Description                                    | Token Savings | Use Case                               |
+| ---------- | ---------------------------------------------- | ------------- | -------------------------------------- |
+| `full`     | Complete response with all metadata (default)  | 0% (baseline) | Debugging, full context needed         |
+| `compact`  | Remove null fields, minimize whitespace        | ~20-30%       | Moderate reduction, preserve structure |
+| `minimal`  | Primary value(s) only, strip metadata          | ~60-70%       | Fast extraction, minimal context       |
+| `value`    | Normalized `{value: X}` structure              | ~70-80%       | Consistent chaining, maximum simplicity|
+
+**Example - Single Tool:**
+
+```json
+// Full mode (default)
+{"result": 105.0, "expression": "100 * 1.05", "variables": null}
+
+// Compact mode
+{"result":105.0,"expression":"100 * 1.05"}
+
+// Minimal mode
+{"result": 105.0}
+
+// Value mode
+{"value": 105.0}
+```
+
+**Example - Batch Execution:**
+
+```json
+// Full mode - Complete operation details
+{
+  "results": [
+    {"id": "step1", "tool": "calculate", "status": "success", "result": {...}, "wave": 0, ...},
+    {"id": "step2", "tool": "percentage", "status": "success", "result": {...}, "wave": 1, ...}
+  ],
+  "summary": {...}
+}
+
+// Value mode - Flat mapping (~90% smaller!)
+{
+  "step1": 105.0,
+  "step2": 115.5,
+  "summary": {"succeeded": 2, "failed": 0, "time_ms": 0.85}
+}
+```
+
+### Selective Extraction (Batch Only)
+
+Use the `extract` parameter to include only specific operations in the response. All operations still execute (for dependencies), but the response only contains requested IDs.
+
+```json
+{
+  "operations": [...20 operations...],
+  "output_mode": "value",
+  "extract": ["final_result"]
+}
+
+// Response: Just what you need!
+{
+  "final_result": 117482.24,
+  "summary": {"succeeded": 20, "failed": 0}
+}
+```
+
+**Token Savings:**
+- Full batch (20 ops): ~2000 tokens
+- Value mode: ~200 tokens (90% reduction)
+- Value + extract: ~50 tokens (97.5% reduction!)
+
+---
+
+## Result Structure Reference
+
+Different tool categories return different response structures. Here's your quick reference guide:
+
+| Tool Category         | Primary Field | Example Access             | Minimal Output           |
+| --------------------- | ------------- | -------------------------- | ------------------------ |
+| **Basic**             | `result`      | `response["result"]`       | `{"result": 105.0}`      |
+| - calculate           |               |                            |                          |
+| - percentage          |               |                            |                          |
+| - round               |               |                            |                          |
+| - convert_units       |               |                            |                          |
+| **Arrays**            | `values`      | `response["values"]`       | `{"values": [[1,2],[3,4]]}` |
+| - array_operations    |               |                            |                          |
+| - array_statistics    |               |                            |                          |
+| - array_aggregate     |               |                            |                          |
+| - array_transform     |               |                            |                          |
+| **Statistics**        | Multiple keys | `response["describe"]["mean"]` | Full object (already minimal) |
+| - statistics          | `describe`, `quartiles`, `outliers` | | |
+| - pivot_table         | Pivot structure | | |
+| - correlation         | Correlation matrix | | |
+| **Financial**         | `result`      | `response["result"]`       | `{"result": 1628.89}`    |
+| - financial_calcs     |               |                            |                          |
+| - compound_interest   |               |                            |                          |
+| - perpetuity          |               |                            |                          |
+| **Linear Algebra**    | `result` or `values` | Tool-specific       | Tool-specific            |
+| - matrix_operations   | `values` for matrices | `response["values"]` | |
+| - solve_linear_system | `result` (solution vector) | `response["result"]` | |
+| - matrix_decomposition | Multiple keys | `response["eigenvalues"]` | |
+| **Calculus**          | `result` or symbolic | Tool-specific       | Tool-specific            |
+| - derivative          | `result` (symbolic expression) | | |
+| - integral            | `result` (value or symbolic) | | |
+| - limits_series       | `result` | | |
+
+**With `output_mode="value"`:** All tools normalize to `{"value": X}` for consistent chaining!
+
+---
+
+## Common Use Patterns
+
+### Pattern 1: Just Need the Final Answer
+
+```json
+{
+  "operations": [
+    {"id": "step1", "tool": "calculate", "arguments": {"expression": "100 * 1.05"}},
+    {"id": "step2", "tool": "percentage", "arguments": {"operation": "increase", "value": "$step1.result", "percentage": 10}},
+    {"id": "final", "tool": "calculate", "arguments": {"expression": "x - 25", "variables": {"x": "$step2.result"}}}
+  ],
+  "output_mode": "value",
+  "extract": ["final"]
+}
+
+// Response: ~20 tokens instead of ~500
+{"final": 90.5, "summary": {"succeeded": 3, "failed": 0}}
+```
+
+### Pattern 2: Chain with Consistent Structure
+
+```json
+// Use value mode for consistent {value: X} across all tools
+{
+  "tool": "calculate",
+  "expression": "2 + 2",
+  "output_mode": "value"
+}
+// Returns: {"value": 4}
+
+{
+  "tool": "array_operations",
+  "operation": "add",
+  "array1": [[1,2]],
+  "array2": [[3,4]],
+  "output_mode": "value"
+}
+// Returns: {"value": [[4,6]]}
+
+// Now you can reference "$op.value" consistently!
+```
+
+### Pattern 3: Debugging with Full Context
+
+```json
+// Use full mode when you need to understand what happened
+{
+  "operations": [...],
+  "output_mode": "full"  // See all metadata, execution times, waves, etc.
+}
+```
+
+### Pattern 4: Production Efficiency
+
+```json
+// Use value mode in production for 70-90% token savings
+{
+  "operations": [...],
+  "output_mode": "value",  // Minimize tokens
+  "context": "Q4 Financial Analysis"  // But keep identification
+}
+```
+
+---
+
 ## Complete Tool Reference
 
 **Note:** All tool parameters include detailed descriptions with concrete examples directly in the MCP interface. Each parameter shows expected format, use cases, and sample values to make usage obvious without referring to external documentation.
