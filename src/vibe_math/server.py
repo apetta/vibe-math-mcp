@@ -113,6 +113,14 @@ def transform_batch_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
     batch_context = data.get("context")
 
     if mode == "final":
+        failed_count = summary.get("failed", 0)
+
+        # Check for failures first - if any failures exist, use minimal mode
+        # This ensures error visibility even in sequential chains
+        if failed_count > 0:
+            return transform_batch_response(data, "minimal")
+
+        # No failures - check if sequential chain for terminal-only output
         if is_sequential_chain(results):
             terminal_id = find_terminal_operation(results)
             if terminal_id:
@@ -130,19 +138,8 @@ def transform_batch_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
                     if batch_context is not None:
                         result["context"] = batch_context
                     return result
-                elif terminal and terminal.get("status") == "error":
-                    result = {
-                        "error": terminal["error"].get("message", "Unknown error"),
-                        "summary": {
-                            "succeeded": summary.get("succeeded", 0),
-                            "failed": summary.get("failed", 0),
-                            "time_ms": summary.get("total_execution_time_ms", 0),
-                        }
-                    }
-                    if batch_context is not None:
-                        result["context"] = batch_context
-                    return result
 
+        # Non-sequential with no failures - fall back to value mode
         return transform_batch_response(data, "value")
 
     if mode == "value":

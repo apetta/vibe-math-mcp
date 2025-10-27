@@ -302,23 +302,29 @@ class TestFinalMode:
         assert result["summary"]["failed"] == 0
 
     def test_final_mode_returns_terminal_error(self):
-        """Test final mode with failed terminal operation."""
+        """Test final mode with failed terminal operation falls back to minimal."""
         data = {
             "results": [
-                {"id": "op1", "status": "success", "result": {"result": 100.0}, "dependencies": []},
+                {"id": "op1", "status": "success", "result": {"result": 100.0}, "dependencies": [], "wave": 0},
                 {
                     "id": "op2",
                     "status": "error",
                     "error": {"message": "Division by zero", "type": "ZeroDivisionError"},
-                    "dependencies": ["op1"]
+                    "dependencies": ["op1"],
+                    "wave": 1
                 }
             ],
             "summary": {"succeeded": 1, "failed": 1, "total_execution_time_ms": 1.2}
         }
         result = transform_batch_response(data, "final")
 
-        assert "error" in result
-        assert result["error"] == "Division by zero"
+        # Should fall back to minimal mode to show all operations
+        assert "results" in result
+        assert len(result["results"]) == 2
+        assert result["results"][0]["status"] == "success"
+        assert result["results"][0]["value"] == 100.0
+        assert result["results"][1]["status"] == "error"
+        assert result["results"][1]["error"] == "Division by zero"
         assert result["summary"]["succeeded"] == 1
         assert result["summary"]["failed"] == 1
 
@@ -351,6 +357,46 @@ class TestFinalMode:
 
         assert "result" in result
         assert result["result"] == 42.0
+
+    def test_final_mode_midchain_error_fallback(self):
+        """Test final mode falls back to minimal when mid-chain errors occur."""
+        data = {
+            "results": [
+                {"id": "step1", "status": "success", "result": {"result": 1000.0}, "dependencies": [], "wave": 0},
+                {
+                    "id": "step2",
+                    "status": "error",
+                    "error": {"message": "Invalid operation"},
+                    "dependencies": ["step1"],
+                    "wave": 1
+                },
+                {
+                    "id": "step3",
+                    "status": "error",
+                    "error": {"message": "Reference to failed operation: step2"},
+                    "dependencies": ["step2"],
+                    "wave": 2
+                }
+            ],
+            "summary": {"succeeded": 1, "failed": 2, "total_execution_time_ms": 1.2}
+        }
+        result = transform_batch_response(data, "final")
+
+        # Should fall back to minimal mode (not value mode)
+        assert "results" in result
+        assert len(result["results"]) == 3
+
+        # Verify all operations are shown with their statuses
+        assert result["results"][0]["status"] == "success"
+        assert result["results"][0]["value"] == 1000.0
+        assert result["results"][1]["status"] == "error"
+        assert result["results"][1]["error"] == "Invalid operation"
+        assert result["results"][2]["status"] == "error"
+        assert result["results"][2]["error"] == "Reference to failed operation: step2"
+
+        # Verify summary
+        assert result["summary"]["succeeded"] == 1
+        assert result["summary"]["failed"] == 2
 
 
 class TestContextPreservation:
