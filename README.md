@@ -331,10 +331,18 @@ Chain operations using `$operation_id.result` syntax:
 
 #### Result Referencing Syntax
 
-- `$op_id.result` - Main result value
+**Universal Accessor (Recommended):**
+- `$op_id.value` - Smart accessor that works with any tool
+
+**Legacy Accessors:**
+- `$op_id.result` - For tools with "result" field
+- `$op_id.values` - For tools with "values" field
 - `$op_id.metadata.field` - Nested metadata access
 - `$op_id.values[0]` - Array indexing
 - `$op_id` - Entire result object
+
+**Why use `.value`?**
+Different tools return values in different fields (`result` vs `values`). The universal `.value` accessor automatically detects and extracts the primary value from any tool, eliminating guesswork when chaining operations.
 
 #### Execution Modes
 
@@ -360,6 +368,7 @@ Control response verbosity using the `output_mode` parameter (available on **eve
 | `compact`  | Remove null fields, minimize whitespace        | ~20-30%       | Moderate reduction, preserve structure |
 | `minimal`  | Primary value(s) only, strip metadata          | ~60-70%       | Fast extraction, minimal context       |
 | `value`    | Normalized `{value: X}` structure              | ~70-80%       | Consistent chaining, maximum simplicity|
+| `final`    | For sequential chains, return only terminal result | ~95%      | Simple calculations, predictable extraction|
 
 **Example - Single Tool:**
 
@@ -407,9 +416,30 @@ const response = await batch_execute({operations: [...], output_mode: "value"});
 const finalValue = response.step2;  // Simple property access
 ```
 
+**Final Mode for Sequential Chains:**
+
+For simple calculations that form a chain (step1 → step2 → step3), use `final` mode:
+
+```json
+{
+  "operations": [
+    {"id": "step1", "tool": "calculate", "arguments": {"expression": "1000 * 1.05"}},
+    {"id": "step2", "tool": "calculate", "arguments": {"expression": "$step1.value * 1.10"}, "depends_on": ["step1"]},
+    {"id": "step3", "tool": "round", "arguments": {"values": "$step2.value", "decimals": 2}, "depends_on": ["step2"]}
+  ],
+  "output_mode": "final"
+}
+
+// Returns: {"result": 1155.00, "summary": {"succeeded": 3, "failed": 0}}
+// Extract: response.result ✨ (predictable!)
+```
+
+**Automatic fallback:** If operations have branching/parallelism, automatically falls back to `value` mode.
+
 **Token Savings:**
 - Full batch (20 ops): ~2000 tokens
 - Value mode: ~200 tokens (90% reduction)
+- Final mode (sequential): ~25 tokens (95% reduction)
 
 ---
 

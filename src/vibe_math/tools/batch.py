@@ -103,7 +103,9 @@ Each operation requires:
 
 ## Result Referencing
 Reference prior results in arguments:
-- `$op_id.result` - Main result value
+- `$op_id.value` - Universal accessor (recommended - works with any tool)
+- `$op_id.result` - Direct access to "result" field (legacy)
+- `$op_id.values` - Direct access to "values" field (legacy)
 - `$op_id.metadata.field` - Nested field access
 - `$op_id.values[0]` - Array indexing
 
@@ -117,6 +119,8 @@ Reference prior results in arguments:
 - `compact`: Remove nulls, minimize whitespace
 - `minimal`: Simplified operation objects with values
 - `value`: Flat {{id: value}} mapping (~90% token reduction)
+- `final`: For sequential chains, return only terminal result (~95% reduction)
+  (Falls back to `value` mode if operations branch or run in parallel)
 
 ## Example
 ```json
@@ -126,7 +130,7 @@ Reference prior results in arguments:
     {{
       "id": "calc2",
       "tool": "calculate",
-      "arguments": {{"expression": "x * 2", "variables": {{"x": "$calc1.result"}}}},
+      "arguments": {{"expression": "x * 2", "variables": {{"x": "$calc1.value"}}}},
       "depends_on": ["calc1"]
     }}
   ],
@@ -135,7 +139,7 @@ Reference prior results in arguments:
 }}
 ```
 
-**Note:** With `value` mode, results are returned as a flat map (e.g., `{{"calc1": 15, "calc2": 30, "summary": ...}}`), making client-side extraction trivial.
+**Note:** With `value` mode, results are returned as a flat map (e.g., `{{"calc1": 15, "calc2": 30, "summary": ...}}`), making client-side extraction trivial. With `final` mode on sequential chains, only the terminal result is returned: `{{"result": 30, "summary": ...}}`.
 
 Response includes: `id`, `status` (success/error/timeout), `result`/`error`, `execution_time_ms`, `wave`, `dependencies`.
 Per-operation `context` field flows through to results. Summary shows total/succeeded/failed counts and wave depth.

@@ -14,6 +14,46 @@ from mcp.types import TextContent
 # Output Transformation Helpers
 # ============================================================================
 
+def is_sequential_chain(results: list) -> bool:
+    """Detect if operations form pure sequential chain (no branching)."""
+    if len(results) <= 1:
+        return True
+
+    dependents = {}
+    for r in results:
+        for dep in r.get("dependencies", []):
+            if dep not in dependents:
+                dependents[dep] = []
+            dependents[dep].append(r["id"])
+
+    all_ids = {r["id"] for r in results}
+    roots = [r["id"] for r in results if not r.get("dependencies")]
+    terminals = [op_id for op_id in all_ids if op_id not in dependents]
+
+    if len(roots) != 1 or len(terminals) != 1:
+        return False
+
+    for op_id in all_ids:
+        if op_id != terminals[0]:
+            if op_id not in dependents or len(dependents[op_id]) != 1:
+                return False
+
+    return True
+
+
+def find_terminal_operation(results: list) -> str | None:
+    """Find terminal operation (one with no dependents)."""
+    if not results:
+        return None
+
+    has_dependents = set()
+    for r in results:
+        has_dependents.update(r.get("dependencies", []))
+
+    terminals = [r["id"] for r in results if r["id"] not in has_dependents]
+    return terminals[0] if len(terminals) == 1 else None
+
+
 def extract_primary_value(data: Dict[str, Any]) -> Any:
     """Extract the primary value from a tool response.
 
@@ -36,11 +76,14 @@ def transform_single_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]
 
     Args:
         data: Original tool response (already JSON-parsed)
-        mode: Output mode (full, compact, minimal, value)
+        mode: Output mode (full, compact, minimal, value, final)
 
     Returns:
         Transformed response dictionary
     """
+    if mode == "final":
+        mode = "value"
+
     if mode == "full":
         return data
 
@@ -82,13 +125,40 @@ def transform_batch_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
 
     Args:
         data: Batch response with 'results' and 'summary' keys
-        mode: Output mode (full, compact, minimal, value)
+        mode: Output mode (full, compact, minimal, value, final)
 
     Returns:
         Transformed batch response
     """
     results = data.get("results", [])
     summary = data.get("summary", {})
+
+    if mode == "final":
+        if is_sequential_chain(results):
+            terminal_id = find_terminal_operation(results)
+            if terminal_id:
+                terminal = next((r for r in results if r["id"] == terminal_id), None)
+
+                if terminal and terminal.get("status") == "success":
+                    return {
+                        "result": extract_primary_value(terminal["result"]),
+                        "summary": {
+                            "succeeded": summary.get("succeeded", 0),
+                            "failed": summary.get("failed", 0),
+                            "time_ms": summary.get("total_execution_time_ms", 0),
+                        }
+                    }
+                elif terminal and terminal.get("status") == "error":
+                    return {
+                        "error": terminal["error"].get("message", "Unknown error"),
+                        "summary": {
+                            "succeeded": summary.get("succeeded", 0),
+                            "failed": summary.get("failed", 0),
+                            "time_ms": summary.get("total_execution_time_ms", 0),
+                        }
+                    }
+
+        return transform_batch_response(data, "value")
 
     if mode == "value":
         # Flat {id: value} mapping + minimal summary
@@ -196,14 +266,15 @@ class CustomMCP(FastMCP):
                 )
             ] = None,
             output_mode: Annotated[
-                Literal["full", "compact", "minimal", "value"],
+                Literal["full", "compact", "minimal", "value", "final"],
                 Field(
                     description=(
                         "Control response verbosity:\n"
                         "- 'full' (default): Complete response with all metadata\n"
                         "- 'compact': Remove null fields, minimize whitespace (~20-30% smaller)\n"
                         "- 'minimal': Primary value(s) only, no metadata (~60-70% smaller)\n"
-                        "- 'value': Normalized {value: X} structure (~70-80% smaller)"
+                        "- 'value': Normalized {value: X} structure (~70-80% smaller)\n"
+                        "- 'final': For sequential chains, return only terminal result (~95% smaller)"
                     )
                 )
             ] = "full",

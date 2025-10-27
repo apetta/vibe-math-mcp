@@ -4,7 +4,10 @@ from vibe_math.server import (
     extract_primary_value,
     transform_single_response,
     transform_batch_response,
+    is_sequential_chain,
+    find_terminal_operation,
 )
+from vibe_math.core.result_resolver import ResultResolver
 
 
 class TestExtractPrimaryValue:
@@ -255,3 +258,155 @@ class TestTransformBatchResponse:
         assert op["status"] == "error"
         assert op["error"] == "Invalid expression"
         assert "value" not in op
+
+
+class TestUniversalValueAccessor:
+    """Test universal .value accessor in result resolution."""
+
+    def test_value_accessor_with_result_field(self):
+        """Test .value extracts from 'result' field."""
+        results = {"op1": {"result": 105.0, "expression": "100 * 1.05"}}
+        resolver = ResultResolver(results)
+        assert resolver.resolve("$op1.value") == 105.0
+
+    def test_value_accessor_with_values_field(self):
+        """Test .value extracts from 'values' field."""
+        results = {"op1": {"values": [[1, 2], [3, 4]], "operation": "add"}}
+        resolver = ResultResolver(results)
+        assert resolver.resolve("$op1.value") == [[1, 2], [3, 4]]
+
+    def test_value_accessor_with_stats_tool(self):
+        """Test .value returns full object for stats tools."""
+        data = {"describe": {"mean": 3.5}, "quartiles": {"Q1": 2.0}}
+        results = {"op1": data}
+        resolver = ResultResolver(results)
+        assert resolver.resolve("$op1.value") == data
+
+    def test_backward_compatibility_result(self):
+        """Test .result still works as before."""
+        results = {"op1": {"result": 105.0, "expression": "100 * 1.05"}}
+        resolver = ResultResolver(results)
+        assert resolver.resolve("$op1.result") == 105.0
+
+    def test_backward_compatibility_values(self):
+        """Test .values still works as before."""
+        results = {"op1": {"values": [[1, 2]], "operation": "add"}}
+        resolver = ResultResolver(results)
+        assert resolver.resolve("$op1.values") == [[1, 2]]
+
+
+class TestFinalMode:
+    """Test final output mode for sequential chains."""
+
+    def test_sequential_chain_detection_simple(self):
+        """Test detection of simple 2-operation chain."""
+        results = [
+            {"id": "op1", "status": "success", "dependencies": []},
+            {"id": "op2", "status": "success", "dependencies": ["op1"]}
+        ]
+        assert is_sequential_chain(results) is True
+
+    def test_sequential_chain_detection_long(self):
+        """Test detection of 5-operation chain."""
+        results = [
+            {"id": "op1", "dependencies": []},
+            {"id": "op2", "dependencies": ["op1"]},
+            {"id": "op3", "dependencies": ["op2"]},
+            {"id": "op4", "dependencies": ["op3"]},
+            {"id": "op5", "dependencies": ["op4"]}
+        ]
+        assert is_sequential_chain(results) is True
+
+    def test_branching_not_sequential(self):
+        """Test branching DAG is not detected as sequential."""
+        results = [
+            {"id": "op1", "dependencies": []},
+            {"id": "op2", "dependencies": ["op1"]},
+            {"id": "op3", "dependencies": ["op1"]}
+        ]
+        assert is_sequential_chain(results) is False
+
+    def test_parallel_not_sequential(self):
+        """Test parallel operations not detected as sequential."""
+        results = [
+            {"id": "op1", "dependencies": []},
+            {"id": "op2", "dependencies": []}
+        ]
+        assert is_sequential_chain(results) is False
+
+    def test_find_terminal_operation(self):
+        """Test finding terminal operation."""
+        results = [
+            {"id": "op1", "dependencies": []},
+            {"id": "op2", "dependencies": ["op1"]},
+            {"id": "op3", "dependencies": ["op2"]}
+        ]
+        assert find_terminal_operation(results) == "op3"
+
+    def test_final_mode_returns_terminal_success(self):
+        """Test final mode with successful terminal operation."""
+        data = {
+            "results": [
+                {"id": "op1", "status": "success", "result": {"result": 100.0}, "dependencies": []},
+                {"id": "op2", "status": "success", "result": {"result": 110.0}, "dependencies": ["op1"]},
+                {"id": "op3", "status": "success", "result": {"result": 90.5}, "dependencies": ["op2"]}
+            ],
+            "summary": {"succeeded": 3, "failed": 0, "total_execution_time_ms": 1.5}
+        }
+        result = transform_batch_response(data, "final")
+
+        assert "result" in result
+        assert result["result"] == 90.5
+        assert result["summary"]["succeeded"] == 3
+        assert result["summary"]["failed"] == 0
+
+    def test_final_mode_returns_terminal_error(self):
+        """Test final mode with failed terminal operation."""
+        data = {
+            "results": [
+                {"id": "op1", "status": "success", "result": {"result": 100.0}, "dependencies": []},
+                {
+                    "id": "op2",
+                    "status": "error",
+                    "error": {"message": "Division by zero", "type": "ZeroDivisionError"},
+                    "dependencies": ["op1"]
+                }
+            ],
+            "summary": {"succeeded": 1, "failed": 1, "total_execution_time_ms": 1.2}
+        }
+        result = transform_batch_response(data, "final")
+
+        assert "error" in result
+        assert result["error"] == "Division by zero"
+        assert result["summary"]["succeeded"] == 1
+        assert result["summary"]["failed"] == 1
+
+    def test_final_mode_fallback_to_value(self):
+        """Test final mode falls back to value mode for non-sequential."""
+        data = {
+            "results": [
+                {"id": "op1", "status": "success", "result": {"result": 100.0}, "dependencies": []},
+                {"id": "op2", "status": "success", "result": {"result": 200.0}, "dependencies": ["op1"]},
+                {"id": "op3", "status": "success", "result": {"result": 300.0}, "dependencies": ["op1"]}
+            ],
+            "summary": {"succeeded": 3, "failed": 0, "total_execution_time_ms": 2.0}
+        }
+        result = transform_batch_response(data, "final")
+
+        assert "op1" in result
+        assert "op2" in result
+        assert "op3" in result
+        assert result["op1"] == 100.0
+
+    def test_final_mode_single_operation(self):
+        """Test final mode with single operation."""
+        data = {
+            "results": [
+                {"id": "op1", "status": "success", "result": {"result": 42.0}, "dependencies": []}
+            ],
+            "summary": {"succeeded": 1, "failed": 0, "total_execution_time_ms": 0.5}
+        }
+        result = transform_batch_response(data, "final")
+
+        assert "result" in result
+        assert result["result"] == 42.0

@@ -90,6 +90,7 @@ class ResultResolver:
         - Dot notation: result.metadata.rate
         - Array indexing: values[0] or values[0][1]
         - Mixed: metadata.values[0].name
+        - Universal accessor: value (intelligently extracts primary value)
 
         Args:
             obj: Starting object to navigate from
@@ -106,8 +107,22 @@ class ResultResolver:
         # This regex splits on . or [ or ], then filters empty strings
         parts = [p for p in re.split(r'\.|\[|\]', path) if p]
 
-        current = obj
-        current_path = []
+        # SPECIAL CASE: Universal .value accessor
+        # If first part is "value" (singular), use smart extraction
+        if parts and parts[0] == "value":
+            from ..server import extract_primary_value
+            current = extract_primary_value(obj)
+            parts = parts[1:]  # Remove "value" from path
+
+            # If only $op.value (no further path), return extracted value
+            if not parts:
+                return current
+
+            # Otherwise continue navigating with remaining path
+            current_path = ["value"]
+        else:
+            current = obj
+            current_path = []
 
         for part in parts:
             current_path.append(part)
