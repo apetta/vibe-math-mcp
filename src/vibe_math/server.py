@@ -77,29 +77,18 @@ def transform_single_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]
     return data
 
 
-def transform_batch_response(
-    data: Dict[str, Any],
-    mode: str,
-    extract: list[str] | None = None
-) -> Dict[str, Any]:
+def transform_batch_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
     """Transform batch execution response based on output mode.
 
     Args:
         data: Batch response with 'results' and 'summary' keys
         mode: Output mode (full, compact, minimal, value)
-        extract: Optional list of operation IDs to include in response
 
     Returns:
         Transformed batch response
     """
     results = data.get("results", [])
     summary = data.get("summary", {})
-
-    # Apply extraction filter first (if specified)
-    if extract:
-        results = [r for r in results if r.get("id") in extract]
-        # Update data dict for full/compact modes that return it directly
-        data = {**data, "results": results}
 
     if mode == "value":
         # Flat {id: value} mapping + minimal summary
@@ -230,9 +219,6 @@ class CustomMCP(FastMCP):
             Returns:
                 Transformed tool result as JSON string
             """
-            # Extract batch-specific parameters (before calling forward)
-            extract = kwargs.get('extract') if is_batch_tool else None
-
             # Call the original tool using FastMCP's forward() function
             tool_result = await forward(**kwargs)
 
@@ -264,7 +250,7 @@ class CustomMCP(FastMCP):
 
             # Apply output transformation based on tool type
             if is_batch_tool:
-                result_data = transform_batch_response(result_data, output_mode, extract)
+                result_data = transform_batch_response(result_data, output_mode)
             else:
                 result_data = transform_single_response(result_data, output_mode)
 

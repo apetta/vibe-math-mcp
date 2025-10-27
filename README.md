@@ -397,28 +397,19 @@ Control response verbosity using the `output_mode` parameter (available on **eve
 }
 ```
 
-### Selective Extraction (Batch Only)
+**Client-Side Filtering:**
 
-Use the `extract` parameter to include only specific operations in the response. All operations still execute (for dependencies), but the response only contains requested IDs.
+With `value` mode, batch responses are flat maps that are trivially filterable:
 
-```json
-{
-  "operations": [...20 operations...],
-  "output_mode": "value",
-  "extract": ["final_result"]
-}
-
-// Response: Just what you need!
-{
-  "final_result": 117482.24,
-  "summary": {"succeeded": 20, "failed": 0}
-}
+```javascript
+// If you only need step2:
+const response = await batch_execute({operations: [...], output_mode: "value"});
+const finalValue = response.step2;  // Simple property access
 ```
 
 **Token Savings:**
 - Full batch (20 ops): ~2000 tokens
 - Value mode: ~200 tokens (90% reduction)
-- Value + extract: ~50 tokens (97.5% reduction!)
 
 ---
 
@@ -470,12 +461,19 @@ Different tool categories return different response structures. Here's your quic
     {"id": "step2", "tool": "percentage", "arguments": {"operation": "increase", "value": "$step1.result", "percentage": 10}},
     {"id": "final", "tool": "calculate", "arguments": {"expression": "x - 25", "variables": {"x": "$step2.result"}}}
   ],
-  "output_mode": "value",
-  "extract": ["final"]
+  "output_mode": "value"
 }
 
-// Response: ~20 tokens instead of ~500
-{"final": 90.5, "summary": {"succeeded": 3, "failed": 0}}
+// Response: ~50 tokens instead of ~500 (90% reduction)
+{
+  "step1": 105.0,
+  "step2": 115.5,
+  "final": 90.5,
+  "summary": {"succeeded": 3, "failed": 0}
+}
+
+// Extract what you need client-side:
+const finalAnswer = response.final;  // 90.5
 ```
 
 ### Pattern 2: Chain with Consistent Structure

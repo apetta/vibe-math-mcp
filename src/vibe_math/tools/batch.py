@@ -118,11 +118,6 @@ Reference prior results in arguments:
 - `minimal`: Simplified operation objects with values
 - `value`: Flat {{id: value}} mapping (~90% token reduction)
 
-## Selective Extraction (via extract parameter)
-Only include specific operation IDs in response. All operations still execute (for dependencies), but response only contains requested operations.
-
-Example: `extract=["final_result"]` returns only the final_result operation.
-
 ## Example
 ```json
 {{
@@ -136,10 +131,11 @@ Example: `extract=["final_result"]` returns only the final_result operation.
     }}
   ],
   "execution_mode": "auto",
-  "output_mode": "value",
-  "extract": ["calc2"]
+  "output_mode": "value"
 }}
 ```
+
+**Note:** With `value` mode, results are returned as a flat map (e.g., `{{"calc1": 15, "calc2": 30, "summary": ...}}`), making client-side extraction trivial.
 
 Response includes: `id`, `status` (success/error/timeout), `result`/`error`, `execution_time_ms`, `wave`, `dependencies`.
 Per-operation `context` field flows through to results. Summary shows total/succeeded/failed counts and wave depth.
@@ -178,17 +174,6 @@ async def batch_execute(
             )
         ),
     ] = False,
-    extract: Annotated[
-        List[str] | None,
-        Field(
-            description=(
-                "Optional: Only include these operation IDs in response. "
-                "All operations still execute (for dependencies), "
-                "but response only contains specified IDs. "
-                "Example: ['final_result', 'summary_stats']"
-            )
-        ),
-    ] = None,
 ) -> str:
     """Execute batch of mathematical operations with dependency management.
 

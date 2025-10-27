@@ -215,44 +215,6 @@ class TestTransformBatchResponse:
         assert "id" in op
         assert "result" in op
 
-    def test_extract_filters_operations(self):
-        """Test that extract parameter filters results."""
-        data = {
-            "results": [
-                {"id": "op1", "status": "success", "result": {"result": 10}},
-                {"id": "op2", "status": "success", "result": {"result": 20}},
-                {"id": "op3", "status": "success", "result": {"result": 30}}
-            ],
-            "summary": {"succeeded": 3, "failed": 0}
-        }
-        result = transform_batch_response(data, "full", extract=["op1", "op3"])
-
-        assert len(result["results"]) == 2
-        assert result["results"][0]["id"] == "op1"
-        assert result["results"][1]["id"] == "op3"
-
-    def test_extract_with_value_mode(self):
-        """Test extract combined with value mode."""
-        data = {
-            "results": [
-                {"id": "step1", "status": "success", "result": {"result": 105.0}},
-                {"id": "step2", "status": "success", "result": {"result": 115.5}},
-                {"id": "final", "status": "success", "result": {"result": 90.5}}
-            ],
-            "summary": {
-                "succeeded": 3,
-                "failed": 0,
-                "total_execution_time_ms": 1.2
-            }
-        }
-        result = transform_batch_response(data, "value", extract=["final"])
-
-        assert "final" in result
-        assert result["final"] == 90.5
-        assert "step1" not in result
-        assert "step2" not in result
-        assert "summary" in result
-
     def test_value_mode_skips_failed_operations(self):
         """Test that value mode only includes successful operations."""
         data = {
@@ -293,26 +255,3 @@ class TestTransformBatchResponse:
         assert op["status"] == "error"
         assert op["error"] == "Invalid expression"
         assert "value" not in op
-
-    def test_extract_with_array_tool_results(self):
-        """Test extract with array tool results."""
-        data = {
-            "results": [
-                {
-                    "id": "arr1",
-                    "status": "success",
-                    "result": {"values": [[1, 2], [3, 4]]}
-                },
-                {
-                    "id": "arr2",
-                    "status": "success",
-                    "result": {"values": [[5, 6]]}
-                }
-            ],
-            "summary": {"succeeded": 2, "failed": 0}
-        }
-        result = transform_batch_response(data, "value", extract=["arr1"])
-
-        assert "arr1" in result
-        assert result["arr1"] == [[1, 2], [3, 4]]
-        assert "arr2" not in result
