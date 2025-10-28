@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
-from vibe_math.core.validators import (
+from vibe_math_mcp.core.validators import (
     CalculateInput,
     ArrayInput,
     validate_matrix_square,

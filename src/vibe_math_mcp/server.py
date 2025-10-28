@@ -337,7 +337,7 @@ class CustomMCP(FastMCP):
 
 
 # Create CustomMCP server instance
-mcp = CustomMCP("vibe-math")
+mcp = CustomMCP("vibe-math-mcp")
 
 # Import and register all tools (must be after mcp instance creation for decorators)
 from .tools import array, basic, batch, calculus, financial, linalg, statistics  # noqa: E402

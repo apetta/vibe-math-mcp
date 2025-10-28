@@ -1,12 +1,12 @@
 """Tests for output control functionality (output_mode and extract parameters)."""
 
-from vibe_math.server import (
+from vibe_math_mcp.server import (
     transform_single_response,
     transform_batch_response,
     is_sequential_chain,
     find_terminal_operation,
 )
-from vibe_math.core.result_resolver import ResultResolver
+from vibe_math_mcp.core.result_resolver import ResultResolver
 
 
 class TestTransformSingleResponse:

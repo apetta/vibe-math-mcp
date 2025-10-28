@@ -2049,8 +2049,8 @@ wheels = [
 ]
 
 [[package]]
-name = "vibe-math"
-version = "0.1.0"
+name = "vibe-math-mcp"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastmcp" },

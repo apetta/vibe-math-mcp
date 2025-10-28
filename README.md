@@ -1,9 +1,9 @@
 # Vibe Math
 
-[![PyPI version](https://badge.fury.io/py/vibe-math.svg)](https://badge.fury.io/py/vibe-math)
-[![Python Version](https://img.shields.io/pypi/pyversions/vibe-math.svg)](https://pypi.org/project/vibe-math/)
+[![PyPI version](https://badge.fury.io/py/vibe-math-mcp.svg)](https://badge.fury.io/py/vibe-math-mcp)
+[![Python Version](https://img.shields.io/pypi/pyversions/vibe-math-mcp.svg)](https://pypi.org/project/vibe-math-mcp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Smithery](https://smithery.ai/badge/@apetta/vibe-math)](https://smithery.ai/server/@apetta/vibe-math)
+[![Smithery](https://smithery.ai/badge/@apetta/vibe-math-mcp)](https://smithery.ai/server/@apetta/vibe-math-mcp)
 [![Test Coverage](https://img.shields.io/badge/coverage-87%25-brightgreen)](https://github.com/apetta/vibe-math)
 [![Tests](https://img.shields.io/badge/tests-245%20passing-brightgreen)](https://github.com/apetta/vibe-math)
 
@@ -42,7 +42,7 @@ Open **Settings > Developer > Edit Config** and add:
   "mcpServers": {
     "Math": {
       "command": "uvx",
-      "args": ["--from", "/absolute/path/to/vibe-math", "vibe-math"] // FIXME: replace with deployed package name
+      "args": ["vibe-math-mcp"]
     }
   }
 }
@@ -68,7 +68,7 @@ Open **Settings > Developer > Edit Config** and add:
 Published package:
 
 ```bash
-claude mcp add --transport stdio math -- uvx vibe-math
+claude mcp add --transport stdio math -- uvx vibe-math-mcp
 ```
 
 Local development:
@@ -84,7 +84,7 @@ claude mcp add --transport stdio math -- uvx --from /absolute/path/to/vibe-math 
   "mcpServers": {
     "math": {
       "command": "uvx",
-      "args": ["--from", "/absolute/path/to/vibe-math", "vibe-math"]
+      "args": ["vibe-math-mcp"]
     }
   }
 }
@@ -179,15 +179,6 @@ uv sync --dev
 uv run poe test
 
 ```
-
-## Tech Stack
-
-- **FastMCP**: MCP server framework
-- **Polars**: High-performance dataframe operations (30x faster than pandas)
-- **NumPy**: Numerical computing with BLAS optimisation
-- **SciPy**: Advanced scientific algorithms
-- **SymPy**: Symbolic mathematics
-- **Pydantic**: Type-safe input validation
 
 ## License
 

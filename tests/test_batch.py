@@ -2,9 +2,9 @@
 
 import json
 import pytest
-from vibe_math.core.batch_models import BatchOperation, OperationResult
-from vibe_math.core.result_resolver import ResultResolver
-from vibe_math.core.batch_executor import BatchExecutor
+from vibe_math_mcp.core.batch_models import BatchOperation, OperationResult
+from vibe_math_mcp.core.result_resolver import ResultResolver
+from vibe_math_mcp.core.batch_executor import BatchExecutor
 
 
 class TestResultResolver:
