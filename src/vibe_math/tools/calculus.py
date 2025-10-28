@@ -7,7 +7,7 @@ from sympy import sympify, diff, integrate, limit, series, Symbol, oo, N, lambdi
 import scipy.integrate as integrate_numeric
 
 from ..server import mcp
-from ..core import format_json, format_result
+from ..core import format_result
 
 
 @mcp.tool(
@@ -155,24 +155,32 @@ async def integral(
 
         if method == "symbolic":
             if is_definite:
+                # Definite symbolic integral
                 result = integrate(expr, (var, lower_bound, upper_bound))
-                result_data = {
+                numeric_value = float(N(result))
+
+                metadata = {
                     "expression": expression,
                     "variable": variable,
                     "lower_bound": lower_bound,
                     "upper_bound": upper_bound,
-                    "result": float(N(result)),
                     "symbolic_result": str(result),
                     "type": "definite",
                 }
+
+                return format_result(numeric_value, metadata)
             else:
+                # Indefinite symbolic integral
                 result = integrate(expr, var)
-                result_data = {
+                antiderivative_str = str(result)
+
+                metadata = {
                     "expression": expression,
                     "variable": variable,
-                    "result": str(result),
                     "type": "indefinite",
                 }
+
+                return format_result(antiderivative_str, metadata)
 
         elif method == "numerical":
             if not is_definite:
@@ -184,21 +192,20 @@ async def integral(
             # Use SciPy's quad for numerical integration
             result, error = integrate_numeric.quad(func, lower_bound, upper_bound)
 
-            result_data = {
+            metadata = {
                 "expression": expression,
                 "variable": variable,
                 "lower_bound": lower_bound,
                 "upper_bound": upper_bound,
-                "result": float(result),
                 "error_estimate": float(error),
                 "method": "numerical",
                 "type": "definite",
             }
 
+            return format_result(float(result), metadata)
+
         else:
             raise ValueError(f"Unknown method: {method}")
-
-        return format_json(result_data)
 
     except Exception as e:
         raise ValueError(
