@@ -90,71 +90,72 @@ def _generate_tool_reference() -> str:
 
 @mcp.tool(
     name="batch_execute",
-    description=f"""Execute multiple operations in a single request with dependency management and parallel execution.
+    description=f"""Execute multiple math operations in a single request with automatic dependency chaining.
+
+**USE THIS TOOL when you need 2+ calculations where outputs feed into inputs** (bond pricing, statistical workflows, multi-step formulas). Don't make sequential individual tool calls.
+
+Benefits: 90-95% token reduction, single API call, highly flexible workflows
+
+## Quick Start
 
 {_generate_tool_reference()}
 
-## Structure
-Each operation requires:
-- `id`: Unique identifier (auto-generated UUID if omitted)
-- `tool`: Tool name from list above
-- `arguments`: Tool-specific parameters
-- `depends_on`: (optional) Array of operation IDs to wait for
-
-## Result Referencing
-Reference prior results in arguments:
-- `$op_id.result` - Main result value from any tool
-- `$op_id.metadata.field` - Nested field access
+**Result referencing:**
+- `$op_id.result` - Use output from prior operation
+- `$op_id.metadata.field` - Access nested fields
 - `$op_id.result[0]` - Array indexing
 
-## Execution Modes
-- `sequential`: Execute in specified order
-- `parallel`: All operations run concurrently
-- `auto`: DAG-based optimization (recommended)
-
-## Output Control (via output_mode parameter)
-- `full`: Complete operation details (default)
-- `compact`: Remove nulls, minimize whitespace
-- `minimal`: Simplified operation objects with values
-- `value`: Flat {{id: value}} mapping (~90% token reduction)
-- `final`: For sequential chains, return only terminal result (~95% reduction)
-  (Falls back to `value` mode if operations branch or run in parallel)
-
-## Context Passthrough
-Two types of context are available:
-
-1. **Batch-level context**: Optional top-level `context` parameter labels the entire batch
-   - Appears in response root across all output modes
-   - Use for audit trails, logging, multi-tenant identification
-   - Example: `"context": "Q4 2025 Portfolio Analysis"`
-
-2. **Step-level context**: Optional `context` field in individual operations
-   - Available in: full, compact, minimal modes
-   - Use to label specific calculations
-   - Example: `{{"id": "bond_a", "context": "UK Government Bond", ...}}`
-
-
-## Example
+**Example - Bond valuation:**
 ```json
 {{
   "operations": [
-    {{"id": "calc1", "tool": "calculate", "arguments": {{"expression": "10 + 5"}}}},
-    {{
-      "id": "calc2",
-      "tool": "calculate",
-      "arguments": {{"expression": "x * 2", "variables": {{"x": "$calc1.result"}}}},
-      "depends_on": ["calc1"]
-    }}
+    {{"id": "coupon", "tool": "calculate",
+     "arguments": {{"expression": "principal * 0.04", "variables": {{"principal": 8306623.86}}}}}},
+    {{"id": "fv", "tool": "financial_calcs",
+     "arguments": {{"calculation": "fv", "rate": 0.04, "periods": 10,
+                   "payment": "$coupon.result", "present_value": 0}},
+     "depends_on": ["coupon"]}},
+    {{"id": "total", "tool": "calculate",
+     "arguments": {{"expression": "fv + principal",
+                   "variables": {{"fv": "$fv.result", "principal": 8306623.86}}}},
+     "depends_on": ["fv"]}}
   ],
   "execution_mode": "auto",
   "output_mode": "value"
 }}
 ```
 
-**Note:** With `value` mode, results are returned as a flat map (e.g., `{{"calc1": 15, "calc2": 30, "summary": ...}}`), making client-side extraction trivial. With `final` mode on sequential chains, only the terminal result is returned: `{{"result": 30, "summary": ...}}`.
+## When to Use
+✅ Multi-step calculations (financial models, statistics, transformations)
+✅ Data pipelines where step N needs output from step N-1
+✅ Any workflow requiring 2+ operations from the tools above
 
-Response includes: `id`, `status` (success/error/timeout), `result`/`error`, `execution_time_ms`, `wave`, `dependencies`.
-Per-operation `context` field flows through to results. Summary shows total/succeeded/failed counts and wave depth.
+❌ Single standalone calculation
+❌ Need to inspect/validate intermediate results before proceeding
+
+## Execution Modes
+- `auto` (recommended): DAG-based optimization, parallel where possible
+- `sequential`: Strict order
+- `parallel`: All concurrent (only if truly independent)
+
+## Output Modes
+- `value`: Flat {{id: value}} map (~90% smaller) - **use this for most cases**
+- `final`: Sequential chains only, returns terminal result (~95% smaller)
+- `minimal`: Basic operation objects with values
+- `compact`: Remove nulls/whitespace
+- `full`: Complete metadata (default)
+
+## Structure
+Each operation:
+- `tool`: Tool name (required)
+- `arguments`: Tool parameters (required)
+- `id`: Unique identifier (auto-generated if omitted)
+- `depends_on`: Array of operation IDs that must complete first
+- `context`: Optional label for this operation
+
+Batch-level `context` parameter labels entire workflow across all output modes.
+
+Response includes: per-operation status, result/error, execution_time_ms, dependency wave, summary stats.
 """,
     annotations=ToolAnnotations(
         title="Batch Execute",

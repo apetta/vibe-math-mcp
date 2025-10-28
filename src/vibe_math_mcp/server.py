@@ -14,6 +14,7 @@ from mcp.types import TextContent
 # Output Transformation Helpers
 # ============================================================================
 
+
 def is_sequential_chain(results: list) -> bool:
     """Detect if operations form pure sequential chain (no branching)."""
     if len(results) <= 1:
@@ -52,8 +53,6 @@ def find_terminal_operation(results: list) -> str | None:
 
     terminals = [r["id"] for r in results if r["id"] not in has_dependents]
     return terminals[0] if len(terminals) == 1 else None
-
-
 
 
 def transform_single_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
@@ -133,7 +132,7 @@ def transform_batch_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
                             "succeeded": summary.get("succeeded", 0),
                             "failed": summary.get("failed", 0),
                             "time_ms": summary.get("total_execution_time_ms", 0),
-                        }
+                        },
                     }
                     if batch_context is not None:
                         result["context"] = batch_context
@@ -155,7 +154,7 @@ def transform_batch_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
                 "succeeded": summary.get("succeeded", 0),
                 "failed": summary.get("failed", 0),
                 "time_ms": summary.get("total_execution_time_ms", 0),
-            }
+            },
         }
         if batch_context is not None:
             result["context"] = batch_context
@@ -179,23 +178,14 @@ def transform_batch_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
 
             minimal_results.append(minimal_op)
 
-        result = {
-            "results": minimal_results,
-            "summary": summary
-        }
+        result = {"results": minimal_results, "summary": summary}
         if batch_context is not None:
             result["context"] = batch_context
         return result
 
     if mode == "compact":
-        compact_results = [
-            {k: v for k, v in r.items() if v is not None}
-            for r in results
-        ]
-        result = {
-            "results": compact_results,
-            "summary": summary
-        }
+        compact_results = [{k: v for k, v in r.items() if v is not None} for r in results]
+        result = {"results": compact_results, "summary": summary}
         if batch_context is not None:
             result["context"] = batch_context
         return result
@@ -241,7 +231,7 @@ class CustomMCP(FastMCP):
         """
 
         # Detect if this is the batch_execute tool for special handling
-        is_batch_tool = (tool.name == "batch_execute")
+        is_batch_tool = tool.name == "batch_execute"
 
         # Define the unified transform function
         async def unified_transform(
@@ -253,7 +243,7 @@ class CustomMCP(FastMCP):
                         "(e.g., 'Bond A PV', 'Q2 revenue'). "
                         "Appears in results for easy identification."
                     )
-                )
+                ),
             ] = None,
             output_mode: Annotated[
                 Literal["full", "compact", "minimal", "value", "final"],
@@ -266,9 +256,9 @@ class CustomMCP(FastMCP):
                         "- 'value': Normalized {value: X} structure (~70-80% smaller)\n"
                         "- 'final': For sequential chains, return only terminal result (~95% smaller)"
                     )
-                )
+                ),
             ] = "full",
-            **kwargs: Any
+            **kwargs: Any,
         ) -> str:
             """Transform function for context injection and output control.
 
@@ -307,7 +297,7 @@ class CustomMCP(FastMCP):
 
             # Inject context if provided (before transformation)
             if context is not None:
-                result_data['context'] = context
+                result_data["context"] = context
 
             # Apply output transformation based on tool type
             if is_batch_tool:
@@ -318,7 +308,7 @@ class CustomMCP(FastMCP):
             # Serialize based on mode
             if output_mode == "compact":
                 # No indentation for compact mode
-                return json.dumps(result_data, separators=(',', ':'), default=str)
+                return json.dumps(result_data, separators=(",", ":"), default=str)
             else:
                 # Pretty-print for all other modes
                 return json.dumps(result_data, indent=2, default=str)
@@ -337,7 +327,33 @@ class CustomMCP(FastMCP):
 
 
 # Create CustomMCP server instance
-mcp = CustomMCP("vibe-math-mcp")
+mcp = CustomMCP(
+    "vibe-math-mcp",
+    instructions="""Use this server for ANY calculation, formula evaluation, or quantitative analysis. Delegate to production-grade tools (Polars, NumPy, SciPy, SymPy) for precision, never manually compute or approximate.
+
+**Comprehensive coverage (21 tools):**
+• Basic math (expressions, percentages, rounding, unit conversion)
+• Arrays (operations, statistics, aggregations, transformations)
+• Statistics (descriptive analysis, pivot tables, correlations)
+• Financial (TVM/PV/FV/IRR/NPV, compound interest, perpetuities, growing annuities)
+• Linear algebra (matrices, systems of equations, decompositions)
+• Calculus (derivatives, integrals, limits, series expansions)
+
+**Key capabilities:**
+• Exact symbolic computation (not approximations)
+• Multi-step workflows with dependency chaining (batch_execute)
+• Token-efficient output modes (up to 95% reduction)
+• Context tracking for complex calculations
+• Professional numerical libraries (battle-tested, validated)
+
+**Use when:**
+• ANY quantitative calculation is needed
+• Precision required (no rounding errors or mental math)
+• Multi-step workflows (financial models, data transformations, statistical pipelines)
+• Matrix operations, calculus, or financial formulas
+
+**Default behavior:** Reach for these tools for quantitative work instead of manual calculation or approximation.""",
+)
 
 # Import and register all tools (must be after mcp instance creation for decorators)
 from .tools import array, basic, batch, calculus, financial, linalg, statistics  # noqa: E402

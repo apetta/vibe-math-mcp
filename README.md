@@ -19,13 +19,7 @@ A high-performance Model Context Protocol (MCP) server for math-ing whilst vibin
 - **Financial Mathematics** (3 tools): Time value of money, compound interest, perpetuity
 - **Linear Algebra** (3 tools): Matrix operations, system solving, decompositions
 - **Calculus** (3 tools): Derivatives, integrals, limits & series
-- **Batch Execution** (1 tool): Multi-tool orchestration with DAG-based parallelization & UUID tracking
-
-=� **Performance**: Leverages Polars for 30x faster data operations; batch execution offers 3-10x speedup for independent operations
-
-<� **Type-Safe**: Full Pydantic validation with clear, actionable error messages
-
-**Tested**: 245 tests with 87% code coverage
+- **Batch Execution** (1 tool): Multi-tool orchestration
 
 ## Installation
 
@@ -55,7 +49,12 @@ Open **Settings > Developer > Edit Config** and add:
   "mcpServers": {
     "Math": {
       "command": "uv",
-      "args": ["--directory", "/absolute/path/to/vibe-math", "run", "vibe-math"]
+      "args": [
+        "--directory",
+        "/absolute/path/to/vibe-math-mcp",
+        "run",
+        "vibe-math-mcp"
+      ]
     }
   }
 }
@@ -74,10 +73,10 @@ claude mcp add --transport stdio math -- uvx vibe-math-mcp
 Local development:
 
 ```bash
-claude mcp add --transport stdio math -- uvx --from /absolute/path/to/vibe-math vibe-math
+claude mcp add --transport stdio math -- uvx --from /absolute/path/to/vibe-math-mcp vibe-math-mcp
 ```
 
-**Team setup** (create `.mcp.json` in project root for shared use with Claude Code & IDEs):
+**Team setup** (create `.mcp.json` in project root for shared use with Claude Code and/or IDEs)
 
 ```json
 {
@@ -90,9 +89,11 @@ claude mcp add --transport stdio math -- uvx --from /absolute/path/to/vibe-math 
 }
 ```
 
-**Verify:** Run `claude mcp list` or use `/mcp` in Claude Code.
+**Verify:** Run `claude mcp list` or use `/mcp` or view available servers in IDEs.
 
-**Test it:**
+### IDEs
+
+**Try it:**
 
 - "Calculate 15% of 250" → uses `percentage`
 - "Find determinant of [[1,2],[3,4]]" → uses `matrix_operations`
@@ -172,8 +173,8 @@ Control response verbosity using the `output_mode` parameter (available on **eve
 ### Running Tests
 
 ```bash
-# Install dev dependencies
-uv sync --dev
+# Install dependencies
+uv sync
 
 # Run all tests
 uv run poe test
@@ -182,14 +183,14 @@ uv run poe test
 
 ## License
 
-MIT
+MIT License. See `LICENSE` file for details.
 
 ## Contributing
 
 Contributions welcome via PRs! Please ensure:
 
-1. Tests pass
-2. Code is formatted
+1. Tests pass, and new ones are added if applicable
+2. Code is linted & formatted
 3. Type hints are included
 4. Clear, actionable error messages are provided
 
