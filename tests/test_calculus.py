@@ -11,7 +11,8 @@ async def test_derivative_basic(mcp_client):
         "derivative", {"expression": "x^2", "variable": "x", "order": 1}
     )
     data = json.loads(result.content[0].text)
-    assert "2*x" in data["derivative"] or "2x" in data["derivative"]
+    assert "result" in data
+    assert "2*x" in data["result"] or "2x" in data["result"]
 
 
 @pytest.mark.asyncio
@@ -21,7 +22,8 @@ async def test_derivative_second_order(mcp_client):
         "derivative", {"expression": "x^3", "variable": "x", "order": 2}
     )
     data = json.loads(result.content[0].text)
-    assert "6*x" in data["derivative"] or "6x" in data["derivative"]
+    assert "result" in data
+    assert "6*x" in data["result"] or "6x" in data["result"]
 
 
 @pytest.mark.asyncio
@@ -42,6 +44,7 @@ async def test_integral_indefinite(mcp_client):
         "integral", {"expression": "x^2", "variable": "x", "method": "symbolic"}
     )
     data = json.loads(result.content[0].text)
+    assert "result" in data
     assert "x**3/3" in data["result"] or "x^3/3" in data["result"]
 
 
@@ -59,6 +62,7 @@ async def test_integral_definite(mcp_client):
         },
     )
     data = json.loads(result.content[0].text)
+    assert "result" in data
     # ∫₀¹ x² dx = 1/3
     assert abs(data["result"] - (1 / 3)) < 1e-10
 
@@ -77,6 +81,7 @@ async def test_integral_numerical(mcp_client):
         },
     )
     data = json.loads(result.content[0].text)
+    assert "result" in data
     # ∫₀^π sin(x) dx ≈ 2
     assert abs(data["result"] - 2.0) < 0.01
 
@@ -113,5 +118,7 @@ async def test_series_expansion(mcp_client):
         {"expression": "exp(x)", "variable": "x", "point": 0, "operation": "series", "order": 4},
     )
     data = json.loads(result.content[0].text)
-    # Taylor series of e^x around 0
-    assert "series" in data
+    # Taylor series of e^x around 0 - result contains the series string
+    assert "result" in data
+    # Series should contain basic expansion terms
+    assert "x" in data["result"]

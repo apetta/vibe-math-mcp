@@ -12,6 +12,7 @@ async def test_matrix_multiply(mcp_client, sample_array_2x2):
         {"operation": "multiply", "matrix1": sample_array_2x2, "matrix2": sample_array_2x2},
     )
     data = json.loads(result.content[0].text)
+    assert "result" in data
     # [[1,2],[3,4]] * [[1,2],[3,4]] = [[7,10],[15,22]]
     assert data["result"] == [[7.0, 10.0], [15.0, 22.0]]
 
@@ -23,6 +24,7 @@ async def test_matrix_transpose(mcp_client, sample_array_2x2):
         "matrix_operations", {"operation": "transpose", "matrix1": sample_array_2x2}
     )
     data = json.loads(result.content[0].text)
+    assert "result" in data
     assert data["result"] == [[1.0, 3.0], [2.0, 4.0]]
 
 
@@ -33,6 +35,7 @@ async def test_matrix_determinant(mcp_client, sample_array_2x2):
         "matrix_operations", {"operation": "determinant", "matrix1": sample_array_2x2}
     )
     data = json.loads(result.content[0].text)
+    assert "result" in data
     # det([[1,2],[3,4]]) = 1*4 - 2*3 = -2
     assert abs(data["result"] - (-2.0)) < 1e-10
 
@@ -44,6 +47,7 @@ async def test_matrix_trace(mcp_client, sample_array_2x2):
         "matrix_operations", {"operation": "trace", "matrix1": sample_array_2x2}
     )
     data = json.loads(result.content[0].text)
+    assert "result" in data
     # trace([[1,2],[3,4]]) = 1 + 4 = 5
     assert data["result"] == 5.0
 
@@ -60,6 +64,7 @@ async def test_solve_linear_system(mcp_client):
         {"coefficients": coefficients, "constants": constants, "method": "direct"},
     )
     data = json.loads(result.content[0].text)
+    assert "result" in data
     # Solution: x=1, y=2
     assert abs(data["result"][0] - 1.0) < 1e-10
     assert abs(data["result"][1] - 2.0) < 1e-10
@@ -72,9 +77,10 @@ async def test_matrix_decomposition_svd(mcp_client, sample_array_2x2):
         "matrix_decomposition", {"matrix": sample_array_2x2, "decomposition": "svd"}
     )
     data = json.loads(result.content[0].text)
-    assert "U" in data
-    assert "singular_values" in data
-    assert "Vt" in data
+    assert "result" in data
+    assert "U" in data["result"]
+    assert "singular_values" in data["result"]
+    assert "Vt" in data["result"]
 
 
 @pytest.mark.asyncio
@@ -84,8 +90,9 @@ async def test_matrix_decomposition_qr(mcp_client, sample_array_2x2):
         "matrix_decomposition", {"matrix": sample_array_2x2, "decomposition": "qr"}
     )
     data = json.loads(result.content[0].text)
-    assert "Q" in data
-    assert "R" in data
+    assert "result" in data
+    assert "Q" in data["result"]
+    assert "R" in data["result"]
 
 
 @pytest.mark.asyncio
@@ -96,6 +103,7 @@ async def test_matrix_inverse_2x2(mcp_client):
         "matrix_operations", {"operation": "inverse", "matrix1": matrix}
     )
     data = json.loads(result.content[0].text)
+    assert "result" in data
     # Verify inverse exists and has correct shape
     assert len(data["result"]) == 2
     assert len(data["result"][0]) == 2
@@ -111,6 +119,7 @@ async def test_matrix_inverse_3x3(mcp_client):
         "matrix_operations", {"operation": "inverse", "matrix1": matrix}
     )
     data = json.loads(result.content[0].text)
+    assert "result" in data
     # Verify inverse has correct shape
     assert len(data["result"]) == 3
     assert len(data["result"][0]) == 3
@@ -232,9 +241,10 @@ async def test_matrix_decomposition_eigen_2x2(mcp_client):
         "matrix_decomposition", {"matrix": matrix, "decomposition": "eigen"}
     )
     data = json.loads(result.content[0].text)
-    assert "eigenvalues" in data
-    assert "eigenvectors" in data
-    assert len(data["eigenvalues"]) == 2
+    assert "result" in data
+    assert "eigenvalues" in data["result"]
+    assert "eigenvectors" in data["result"]
+    assert len(data["result"]["eigenvalues"]) == 2
 
 
 @pytest.mark.asyncio
@@ -245,8 +255,9 @@ async def test_matrix_decomposition_eigen_3x3(mcp_client):
         "matrix_decomposition", {"matrix": matrix, "decomposition": "eigen"}
     )
     data = json.loads(result.content[0].text)
-    assert len(data["eigenvalues"]) == 3
-    assert len(data["eigenvectors"]) == 3
+    assert "result" in data
+    assert len(data["result"]["eigenvalues"]) == 3
+    assert len(data["result"]["eigenvectors"]) == 3
 
 
 @pytest.mark.asyncio
@@ -269,8 +280,9 @@ async def test_matrix_decomposition_cholesky_positive_definite(mcp_client):
         "matrix_decomposition", {"matrix": matrix, "decomposition": "cholesky"}
     )
     data = json.loads(result.content[0].text)
-    assert "L" in data
-    assert len(data["L"]) == 2
+    assert "result" in data
+    assert "L" in data["result"]
+    assert len(data["result"]["L"]) == 2
 
 
 @pytest.mark.asyncio
@@ -304,10 +316,11 @@ async def test_matrix_decomposition_lu_2x2(mcp_client):
         "matrix_decomposition", {"matrix": matrix, "decomposition": "lu"}
     )
     data = json.loads(result.content[0].text)
-    assert "P" in data
-    assert "L" in data
-    assert "U" in data
-    assert len(data["L"]) == 2
+    assert "result" in data
+    assert "P" in data["result"]
+    assert "L" in data["result"]
+    assert "U" in data["result"]
+    assert len(data["result"]["L"]) == 2
 
 
 @pytest.mark.asyncio
@@ -318,6 +331,7 @@ async def test_matrix_decomposition_lu_3x3(mcp_client):
         "matrix_decomposition", {"matrix": matrix, "decomposition": "lu"}
     )
     data = json.loads(result.content[0].text)
-    assert len(data["P"]) == 3
-    assert len(data["L"]) == 3
-    assert len(data["U"]) == 3
+    assert "result" in data
+    assert len(data["result"]["P"]) == 3
+    assert len(data["result"]["L"]) == 3
+    assert len(data["result"]["U"]) == 3

@@ -76,6 +76,7 @@ async def test_correlation_pearson(mcp_client):
         "correlation", {"data": data, "method": "pearson", "output_format": "matrix"}
     )
     result_data = json.loads(result.content[0].text)
+    assert "result" in result_data
     # x and y should be perfectly correlated
     assert (
         result_data["result"]["x"]["y"] == 1.0 or abs(result_data["result"]["x"]["y"] - 1.0) < 1e-10
@@ -93,6 +94,7 @@ async def test_correlation_spearman(mcp_client):
         "correlation", {"data": data, "method": "spearman", "output_format": "matrix"}
     )
     result_data = json.loads(result.content[0].text)
+    assert "result" in result_data
     # Spearman correlation should be perfect for monotonic relationship
     assert abs(result_data["result"]["x"]["y"] - 1.0) < 1e-10
 
@@ -109,6 +111,7 @@ async def test_correlation_pairs_format(mcp_client):
         "correlation", {"data": data, "method": "pearson", "output_format": "pairs"}
     )
     result_data = json.loads(result.content[0].text)
+    assert "result" in result_data
     # Should return pairwise correlations
     assert isinstance(result_data["result"], list)
     # Should have 3 pairs: (a,b), (a,c), (b,c)

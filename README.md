@@ -1,6 +1,13 @@
 # Vibe Math
 
-A high-performance Model Context Protocol (MCP) server for mathematical operations, leveraging Polars for optimal calculation speed and comprehensive mathematical capabilities from basic arithmetic to advanced calculus and linear algebra.
+[![PyPI version](https://badge.fury.io/py/vibe-math.svg)](https://badge.fury.io/py/vibe-math)
+[![Python Version](https://img.shields.io/pypi/pyversions/vibe-math.svg)](https://pypi.org/project/vibe-math/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Smithery](https://smithery.ai/badge/@apetta/vibe-math)](https://smithery.ai/server/@apetta/vibe-math)
+[![Test Coverage](https://img.shields.io/badge/coverage-87%25-brightgreen)](https://github.com/apetta/vibe-math)
+[![Tests](https://img.shields.io/badge/tests-245%20passing-brightgreen)](https://github.com/apetta/vibe-math)
+
+A high-performance Model Context Protocol (MCP) server for math-ing whilst vibing with LLMs. Leveraging Polars for optimal calculation speed and comprehensive mathematical capabilities from basic arithmetic to advanced calculus and linear algebra.
 
 ## Features
 
@@ -18,29 +25,9 @@ A high-performance Model Context Protocol (MCP) server for mathematical operatio
 
 <� **Type-Safe**: Full Pydantic validation with clear, actionable error messages
 
-**Tested**: 72 tests with 43% code coverage
+**Tested**: 245 tests with 87% code coverage
 
 ## Installation
-
-### Using uvx (Recommended)
-
-```bash
-uvx vibe-math
-```
-
-### Using uv
-
-```bash
-# Clone the repository
-git clone <repository-url>
-cd vibe-math
-
-# Install with uv
-uv sync
-
-# Run the server
-uv run vibe-math
-```
 
 ## Setup with Claude
 
@@ -53,9 +40,9 @@ Open **Settings > Developer > Edit Config** and add:
 ```json
 {
   "mcpServers": {
-    "math": {
+    "Math": {
       "command": "uvx",
-      "args": ["--from", "/absolute/path/to/vibe-math", "vibe-math"]
+      "args": ["--from", "/absolute/path/to/vibe-math", "vibe-math"] // FIXME: replace with deployed package name
     }
   }
 }
@@ -66,25 +53,13 @@ Open **Settings > Developer > Edit Config** and add:
 ```json
 {
   "mcpServers": {
-    "math": {
+    "Math": {
       "command": "uv",
-      "args": [
-        "--directory",
-        "/Users/akshaypetta/Desktop/Dev/vibe-math",
-        "run",
-        "vibe-math"
-      ]
+      "args": ["--directory", "/absolute/path/to/vibe-math", "run", "vibe-math"]
     }
   }
 }
 ```
-
-Restart Claude Desktop. Look for the 🔌 icon to confirm it's working.
-
-**Config file locations:**
-
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ### Claude Code
 
@@ -102,7 +77,7 @@ Local development:
 claude mcp add --transport stdio math -- uvx --from /absolute/path/to/vibe-math vibe-math
 ```
 
-**Team setup** (create `.mcp.json` in project root):
+**Team setup** (create `.mcp.json` in project root for shared use with Claude Code & IDEs):
 
 ```json
 {
@@ -123,425 +98,19 @@ claude mcp add --transport stdio math -- uvx --from /absolute/path/to/vibe-math 
 - "Find determinant of [[1,2],[3,4]]" → uses `matrix_operations`
 - "Integrate x^2 from 0 to 1" → uses `integral`
 
-## Quick Start
-
-### Tool Examples
-
-#### Basic Calculations
-
-```json
-// Evaluate mathematical expressions
-{
-  "tool": "calculate",
-  "expression": "x^2 + 2*x + 1",
-  "variables": {"x": 3}
-}
-// � 16.0
-
-// Calculate percentages
-{
-  "tool": "percentage",
-  "operation": "increase",
-  "value": 100,
-  "percentage": 20
-}
-// � 120.0
-```
-
-#### Array Operations
-
-```json
-// Array statistics
-{
-  "tool": "array_statistics",
-  "data": [[1,2,3],[4,5,6]],
-  "operations": ["mean", "std"],
-  "axis": 0
-}
-
-// Weighted average
-{
-  "tool": "array_aggregate",
-  "operation": "weighted_average",
-  "array1": [10, 20, 30],
-  "weights": [1, 2, 3]
-}
-// � 23.33...
-```
-
-#### Financial Mathematics
-
-```json
-// Compound interest
-{
-  "tool": "compound_interest",
-  "principal": 1000,
-  "rate": 0.05,
-  "time": 10,
-  "frequency": "monthly"
-}
-
-// Present value
-{
-  "tool": "financial_calcs",
-  "calculation": "pv",
-  "rate": 0.05,
-  "periods": 10,
-  "payment": -100
-}
-```
-
-#### Linear Algebra
-
-```json
-// Solve linear system Ax = b
-{
-  "tool": "solve_linear_system",
-  "coefficients": [[2, 3], [1, 1]],
-  "constants": [8, 3]
-}
-// � x=1, y=2
-
-// Matrix decomposition
-{
-  "tool": "matrix_decomposition",
-  "matrix": [[4,2],[1,3]],
-  "decomposition": "svd"
-}
-```
-
-#### Calculus
-
-```json
-// Derivative
-{
-  "tool": "derivative",
-  "expression": "x^3 + 2*x^2",
-  "variable": "x",
-  "order": 2
-}
-// � "6*x + 4"
-
-// Definite integral
-{
-  "tool": "integral",
-  "expression": "x^2",
-  "variable": "x",
-  "lower_bound": 0,
-  "upper_bound": 1
-}
-// � 0.333...
-```
-
-### Batch Execution
-
-The `batch_execute` tool enables orchestrating multiple operations in a single request with intelligent dependency management and parallel execution.
-
-**Key Features:**
-- **UUID Tracking**: Each operation has a unique ID for clear input/output mapping
-- **Dependency Management**: Automatic DAG-based execution with parallel waves
-- **Result Referencing**: JSONPath-like syntax to reference prior operation results
-- **Three Execution Modes**: Sequential, parallel, or auto (recommended)
-- **Performance**: 3-10x faster for independent operations, 40-60% token savings
-
-#### Simple Batch (Parallel Execution)
-
-```json
-{
-  "tool": "batch_execute",
-  "operations": [
-    {
-      "id": "calc1",
-      "tool": "calculate",
-      "arguments": {"expression": "2 + 2"}
-    },
-    {
-      "id": "pct1",
-      "tool": "percentage",
-      "arguments": {"operation": "of", "value": 100, "percentage": 15}
-    }
-  ],
-  "execution_mode": "auto"
-}
-```
-
-Response includes 1:1 UUID mapping:
-```json
-{
-  "results": [
-    {"id": "calc1", "status": "success", "result": {"result": 4}, "wave": 0},
-    {"id": "pct1", "status": "success", "result": {"result": 15}, "wave": 0}
-  ],
-  "summary": {
-    "total_operations": 2,
-    "succeeded": 2,
-    "num_waves": 1
-  }
-}
-```
-
-#### Dependent Operations (DAG Execution)
-
-Chain operations using `$operation_id.result` syntax:
-
-```json
-{
-  "tool": "batch_execute",
-  "operations": [
-    {
-      "id": "bond_a",
-      "tool": "financial_calcs",
-      "context": "Corporate Bond A",
-      "arguments": {
-        "calculation": "pv",
-        "rate": 0.05,
-        "periods": 10,
-        "future_value": 1000
-      }
-    },
-    {
-      "id": "bond_b",
-      "tool": "financial_calcs",
-      "context": "Corporate Bond B",
-      "arguments": {
-        "calculation": "pv",
-        "rate": 0.06,
-        "periods": 10,
-        "future_value": 1000
-      }
-    },
-    {
-      "id": "portfolio",
-      "tool": "calculate",
-      "context": "Total Portfolio Value",
-      "arguments": {
-        "expression": "a + b",
-        "variables": {
-          "a": "$bond_a.result",
-          "b": "$bond_b.result"
-        }
-      },
-      "depends_on": ["bond_a", "bond_b"]
-    }
-  ]
-}
-```
-
-**Execution**: `bond_a` and `bond_b` run in parallel (wave 0), then `portfolio` runs (wave 1).
-
-#### Result Referencing Syntax
-
-**Standard Accessors:**
-- `$op_id.result` - Main result value from any tool
-- `$op_id.metadata.field` - Nested metadata access
-- `$op_id.result[0]` - Array indexing
-- `$op_id` - Entire result object
-
-#### Execution Modes
-
-| Mode         | Behaviour                                           | Best For                    |
-| ------------ | --------------------------------------------------- | --------------------------- |
-| `sequential` | Execute in exact order specified                    | Order-dependent pipelines   |
-| `parallel`   | All operations run concurrently (ignores deps)      | Independent calculations    |
-| `auto`       | Automatic DAG detection & wave-based parallelization | Mixed dependencies (default) |
-
----
-
 ## Output Control
 
-All tools automatically support output control for maximum flexibility and token efficiency.
-
-### Output Modes
+All tools automatically support output control for maximum flexibility and token efficiency. The LLM can specify the desired verbosity.
 
 Control response verbosity using the `output_mode` parameter (available on **every tool**):
 
-| Mode       | Description                                    | Token Savings | Use Case                               |
-| ---------- | ---------------------------------------------- | ------------- | -------------------------------------- |
-| `full`     | Complete response with all metadata (default)  | 0% (baseline) | Debugging, full context needed         |
-| `compact`  | Remove null fields, minimize whitespace        | ~20-30%       | Moderate reduction, preserve structure |
-| `minimal`  | Primary value(s) only, strip metadata          | ~60-70%       | Fast extraction, minimal context       |
-| `value`    | Normalized `{value: X}` structure              | ~70-80%       | Consistent chaining, maximum simplicity|
-| `final`    | For sequential chains, return only terminal result | ~95%      | Simple calculations, predictable extraction|
-
-**Example - Single Tool:**
-
-```json
-// Full mode (default)
-{"result": 105.0, "expression": "100 * 1.05", "variables": null}
-
-// Compact mode
-{"result":105.0,"expression":"100 * 1.05"}
-
-// Minimal mode
-{"result": 105.0}
-
-// Value mode
-{"value": 105.0}
-```
-
-**Example - Batch Execution:**
-
-```json
-// Full mode - Complete operation details
-{
-  "results": [
-    {"id": "step1", "tool": "calculate", "status": "success", "result": {...}, "wave": 0, ...},
-    {"id": "step2", "tool": "percentage", "status": "success", "result": {...}, "wave": 1, ...}
-  ],
-  "summary": {...}
-}
-
-// Value mode - Flat mapping (~90% smaller!)
-{
-  "step1": 105.0,
-  "step2": 115.5,
-  "summary": {"succeeded": 2, "failed": 0, "time_ms": 0.85}
-}
-```
-
-**Client-Side Filtering:**
-
-With `value` mode, batch responses are flat maps that are trivially filterable:
-
-```javascript
-// If you only need step2:
-const response = await batch_execute({operations: [...], output_mode: "value"});
-const finalValue = response.step2;  // Simple property access
-```
-
-**Final Mode for Sequential Chains:**
-
-For simple calculations that form a chain (step1 → step2 → step3), use `final` mode:
-
-```json
-{
-  "operations": [
-    {"id": "step1", "tool": "calculate", "arguments": {"expression": "1000 * 1.05"}},
-    {"id": "step2", "tool": "calculate", "arguments": {"expression": "$step1.result * 1.10"}, "depends_on": ["step1"]},
-    {"id": "step3", "tool": "round", "arguments": {"values": "$step2.result", "decimals": 2}, "depends_on": ["step2"]}
-  ],
-  "output_mode": "final"
-}
-
-// Returns: {"result": 1155.00, "summary": {"succeeded": 3, "failed": 0}}
-// Extract: response.result ✨ (predictable!)
-```
-
-**Automatic fallback:** If operations have branching/parallelism, automatically falls back to `value` mode.
-
-**Token Savings:**
-- Full batch (20 ops): ~2000 tokens
-- Value mode: ~200 tokens (90% reduction)
-- Final mode (sequential): ~25 tokens (95% reduction)
-
----
-
-## Result Structure Reference
-
-Different tool categories return different response structures. Here's your quick reference guide:
-
-| Tool Category         | Primary Field | Example Access             | Minimal Output           |
-| --------------------- | ------------- | -------------------------- | ------------------------ |
-| **Basic**             | `result`      | `response["result"]`       | `{"result": 105.0}`      |
-| - calculate           |               |                            |                          |
-| - percentage          |               |                            |                          |
-| - round               |               |                            |                          |
-| - convert_units       |               |                            |                          |
-| **Arrays**            | `result`      | `response["result"]`       | `{"result": [[1,2],[3,4]]}` |
-| - array_operations    |               |                            |                          |
-| - array_statistics    |               |                            |                          |
-| - array_aggregate     |               |                            |                          |
-| - array_transform     |               |                            |                          |
-| **Statistics**        | `result`      | `response["result"]["describe"]["mean"]` | `{"result": {...}}` |
-| - statistics          |               | Nested objects within result | |
-| - pivot_table         |               | Pivot structure in result | |
-| - correlation         |               | Correlation matrix in result | |
-| **Financial**         | `result`      | `response["result"]`       | `{"result": 1628.89}`    |
-| - financial_calcs     |               |                            |                          |
-| - compound_interest   |               |                            |                          |
-| - perpetuity          |               |                            |                          |
-| **Linear Algebra**    | `result`      | `response["result"]`       | `{"result": [[...]]}` or scalar |
-| - matrix_operations   |               | Matrices in result | |
-| - solve_linear_system |               | Solution vector in result | |
-| - matrix_decomposition |              | Components (U, S, V) in result | |
-| **Calculus**          | `result`      | `response["result"]`       | `{"result": "6*x + 4"}` |
-| - derivative          |               | Symbolic expression | |
-| - integral            |               | Value or symbolic | |
-| - limits_series       |               | | |
-
-**With `output_mode="value"`:** All tools normalize to `{"value": X}` for consistent chaining!
-
----
-
-## Common Use Patterns
-
-### Pattern 1: Just Need the Final Answer
-
-```json
-{
-  "operations": [
-    {"id": "step1", "tool": "calculate", "arguments": {"expression": "100 * 1.05"}},
-    {"id": "step2", "tool": "percentage", "arguments": {"operation": "increase", "value": "$step1.result", "percentage": 10}},
-    {"id": "final", "tool": "calculate", "arguments": {"expression": "x - 25", "variables": {"x": "$step2.result"}}}
-  ],
-  "output_mode": "value"
-}
-
-// Response: ~50 tokens instead of ~500 (90% reduction)
-{
-  "step1": 105.0,
-  "step2": 115.5,
-  "final": 90.5,
-  "summary": {"succeeded": 3, "failed": 0}
-}
-
-// Extract what you need client-side:
-const finalAnswer = response.final;  // 90.5
-```
-
-### Pattern 2: Chain with Consistent Structure
-
-```json
-// All tools now use consistent {"result": X} structure
-{
-  "tool": "calculate",
-  "expression": "2 + 2"
-}
-// Returns: {"result": 4}
-
-{
-  "tool": "array_operations",
-  "operation": "add",
-  "array1": [[1,2]],
-  "array2": [[3,4]]
-}
-// Returns: {"result": [[4,6]]}
-
-// Now you can reference "$op.result" consistently across all tools!
-```
-
-### Pattern 3: Debugging with Full Context
-
-```json
-// Use full mode when you need to understand what happened
-{
-  "operations": [...],
-  "output_mode": "full"  // See all metadata, execution times, waves, etc.
-}
-```
-
-### Pattern 4: Production Efficiency
-
-```json
-// Use value mode in production for 70-90% token savings
-{
-  "operations": [...],
-  "output_mode": "value",  // Minimize tokens
-  "context": "Q4 Financial Analysis"  // But keep identification
-}
-```
-
----
+| Mode      | Description                                        | Token Savings | Use Case                                    |
+| --------- | -------------------------------------------------- | ------------- | ------------------------------------------- |
+| `full`    | Complete response with all metadata (default)      | 0% (baseline) | Debugging, full context needed              |
+| `compact` | Remove null fields, minimize whitespace            | ~20-30%       | Moderate reduction, preserve structure      |
+| `minimal` | Primary value(s) only, strip metadata              | ~60-70%       | Fast extraction, minimal context            |
+| `value`   | Normalized `{value: X}` structure                  | ~70-80%       | Consistent chaining, maximum simplicity     |
+| `final`   | For sequential chains, return only terminal result | ~95%          | Simple calculations, predictable extraction |
 
 ## Complete Tool Reference
 
@@ -596,6 +165,8 @@ const finalAnswer = response.final;  // 90.5
 | `integral`      | Symbolic and numerical integration     |
 | `limits_series` | Limits and series expansions           |
 
+---
+
 ## Development
 
 ### Running Tests
@@ -605,33 +176,11 @@ const finalAnswer = response.final;  // 90.5
 uv sync --dev
 
 # Run all tests
-uv run pytest
-
-# Run with coverage
-uv run pytest --cov=vibe_math --cov-report=html
-```
-
-### Project Structure
+uv run poe test
 
 ```
-vibe-math/
-   src/vibe_math/
-      server.py           # FastMCP server
-      core/               # Core utilities
-         validators.py   # Pydantic models
-         formatters.py   # Response formatting
-         converters.py   # Data conversions
-      tools/              # Tool modules
-          basic.py
-          array.py
-          statistics.py
-          financial.py
-          linalg.py
-          calculus.py
-   tests/                  # Comprehensive tests
-```
 
-## Technology Stack
+## Tech Stack
 
 - **FastMCP**: MCP server framework
 - **Polars**: High-performance dataframe operations (30x faster than pandas)
@@ -640,27 +189,18 @@ vibe-math/
 - **SymPy**: Symbolic mathematics
 - **Pydantic**: Type-safe input validation
 
-## Performance
-
-The server is optimised for speed:
-
-- Polars for data operations (>10x faster than pandas)
-- NumPy BLAS for linear algebra
-- Lazy evaluation where possible
-- Streaming support for large datasets
-
 ## License
 
 MIT
 
 ## Contributing
 
-Contributions welcome! Please ensure:
+Contributions welcome via PRs! Please ensure:
 
-1. Tests pass (`uv run pytest`)
-2. Code is formatted (`uv run ruff format`)
+1. Tests pass
+2. Code is formatted
 3. Type hints are included
-4. Clear, actionable error messages
+4. Clear, actionable error messages are provided
 
 ## Support
 

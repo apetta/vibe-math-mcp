@@ -227,24 +227,24 @@ async def matrix_decomposition(
             eigenvectors: NDArray[np.complexfloating]
             eigenvalues, eigenvectors = la.eig(mat)  # type: ignore[misc]
 
-            return format_json(
+            return format_result(
                 {
                     "eigenvalues": eigenvalues.tolist(),
                     "eigenvectors": eigenvectors.tolist(),
-                    "decomposition": decomposition,
-                }
+                },
+                {"decomposition": decomposition}
             )
 
         elif decomposition == "svd":
             U, s, Vt = la.svd(mat)
 
-            return format_json(
+            return format_result(
                 {
                     "U": U.tolist(),
                     "singular_values": s.tolist(),
                     "Vt": Vt.tolist(),
-                    "decomposition": decomposition,
-                }
+                },
+                {"decomposition": decomposition}
             )
 
         elif decomposition == "qr":
@@ -252,7 +252,10 @@ async def matrix_decomposition(
             R: NDArray[np.floating]
             Q, R = la.qr(mat)  # type: ignore[misc]
 
-            return format_json({"Q": Q.tolist(), "R": R.tolist(), "decomposition": decomposition})
+            return format_result(
+                {"Q": Q.tolist(), "R": R.tolist()},
+                {"decomposition": decomposition}
+            )
 
         elif decomposition == "cholesky":
             if mat.shape[0] != mat.shape[1]:
@@ -266,8 +269,9 @@ async def matrix_decomposition(
 
             try:
                 L = la.cholesky(mat, lower=True)
-                return format_json(
-                    {"L": L.tolist(), "decomposition": decomposition, "note": "A = L * L^T"}
+                return format_result(
+                    {"L": L.tolist()},
+                    {"decomposition": decomposition, "note": "A = L * L^T"}
                 )
             except np.linalg.LinAlgError:
                 raise ValueError("Matrix is not positive definite")
@@ -275,14 +279,13 @@ async def matrix_decomposition(
         elif decomposition == "lu":
             P, L, U = la.lu(mat)  # type: ignore[misc]
 
-            return format_json(
+            return format_result(
                 {
                     "P": P.tolist(),
                     "L": L.tolist(),
                     "U": U.tolist(),
-                    "decomposition": decomposition,
-                    "note": "A = P * L * U",
-                }
+                },
+                {"decomposition": decomposition, "note": "A = P * L * U"}
             )
 
         else:
@@ -292,7 +295,3 @@ async def matrix_decomposition(
         if isinstance(e, ValueError):
             raise
         raise ValueError(f"Matrix decomposition failed: {str(e)}")
-
-
-# Import format_json for decomposition results
-from ..core import format_json  # noqa: E402

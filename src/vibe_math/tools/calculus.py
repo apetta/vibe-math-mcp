@@ -7,7 +7,7 @@ from sympy import sympify, diff, integrate, limit, series, Symbol, oo, N, lambdi
 import scipy.integrate as integrate_numeric
 
 from ..server import mcp
-from ..core import format_json
+from ..core import format_json, format_result
 
 
 @mcp.tool(
@@ -71,20 +71,20 @@ async def derivative(
         derivative_expr = diff(expr, var, order)
         derivative_str = str(derivative_expr)
 
-        result_data = {
+        # Build metadata
+        metadata = {
             "expression": expression,
             "variable": variable,
             "order": order,
-            "derivative": derivative_str,
         }
 
         # Evaluate at point if provided
         if point is not None:
             value = float(N(derivative_expr.subs(var, point)))
-            result_data["value_at_point"] = value
-            result_data["point"] = point
+            metadata["value_at_point"] = value
+            metadata["point"] = point
 
-        return format_json(result_data)
+        return format_result(derivative_str, metadata)
 
     except Exception as e:
         raise ValueError(
@@ -290,14 +290,16 @@ async def limits_series(
                 # One-sided limit
                 result = limit(expr, var, point_sym, direction)
 
-            result_data = {
+            # Limit value is the primary result
+            limit_str = str(result)
+            metadata = {
                 "expression": expression,
                 "variable": variable,
                 "point": str(point),
                 "direction": direction,
-                "limit": str(result),
                 "numeric_value": float(N(result)) if result.is_number else None,
             }
+            return format_result(limit_str, metadata)
 
         elif operation == "series":
             # Series expansion
@@ -307,19 +309,18 @@ async def limits_series(
             # Remove O() term for cleaner output
             series_no_o = series_expr.removeO()
 
-            result_data = {
+            # Series string is the primary result
+            metadata = {
                 "expression": expression,
                 "variable": variable,
                 "point": str(point),
                 "order": order,
-                "series": series_str,
                 "series_without_O": str(series_no_o),
             }
+            return format_result(series_str, metadata)
 
         else:
             raise ValueError(f"Unknown operation: {operation}")
-
-        return format_json(result_data)
 
     except Exception as e:
         raise ValueError(

@@ -104,6 +104,7 @@ async def test_compound_interest_annual(mcp_client):
         {"principal": 1000, "rate": 0.05, "time": 10, "frequency": "annual"},
     )
     data = json.loads(result.content[0].text)
+    assert "result" in data
     expected = 1000 * (1.05**10)
     assert abs(data["result"] - expected) < 0.01
 
@@ -116,6 +117,7 @@ async def test_compound_interest_continuous(mcp_client):
         {"principal": 1000, "rate": 0.05, "time": 10, "frequency": "continuous"},
     )
     data = json.loads(result.content[0].text)
+    assert "result" in data
     # Continuous: A = Pe^(rt)
     import math
 
@@ -265,6 +267,7 @@ async def test_compound_interest_semi_annual(mcp_client):
         {"principal": 1000, "rate": 0.06, "time": 5, "frequency": "semi-annual"},
     )
     data = json.loads(result.content[0].text)
+    assert "result" in data
     # Semi-annual: n=2, A = 1000 * (1 + 0.06/2)^(2*5)
     expected = 1000 * (1 + 0.06 / 2) ** (2 * 5)
     assert abs(data["result"] - expected) < 0.01
@@ -278,6 +281,7 @@ async def test_compound_interest_quarterly(mcp_client):
         {"principal": 1000, "rate": 0.08, "time": 3, "frequency": "quarterly"},
     )
     data = json.loads(result.content[0].text)
+    assert "result" in data
     # Quarterly: n=4, A = 1000 * (1 + 0.08/4)^(4*3)
     expected = 1000 * (1 + 0.08 / 4) ** (4 * 3)
     assert abs(data["result"] - expected) < 0.01
@@ -291,6 +295,7 @@ async def test_compound_interest_monthly(mcp_client):
         {"principal": 5000, "rate": 0.05, "time": 2, "frequency": "monthly"},
     )
     data = json.loads(result.content[0].text)
+    assert "result" in data
     # Monthly: n=12, A = 5000 * (1 + 0.05/12)^(12*2)
     expected = 5000 * (1 + 0.05 / 12) ** (12 * 2)
     assert abs(data["result"] - expected) < 0.01
@@ -304,6 +309,7 @@ async def test_compound_interest_daily(mcp_client):
         {"principal": 2000, "rate": 0.04, "time": 1, "frequency": "daily"},
     )
     data = json.loads(result.content[0].text)
+    assert "result" in data
     # Daily: n=365, A = 2000 * (1 + 0.04/365)^(365*1)
     expected = 2000 * (1 + 0.04 / 365) ** (365 * 1)
     assert abs(data["result"] - expected) < 0.01
@@ -816,6 +822,7 @@ async def test_financial_perpetuity_monthly_cfa(mcp_client):
         {"payment": 1000, "rate": 0.005}
     )
     data = json.loads(result.content[0].text)
+    assert "result" in data
     assert abs(data["result"] - 200000.00) < 0.01
     # Verify metadata
     assert data["type"] == "level_ordinary"
@@ -842,6 +849,7 @@ async def test_financial_perpetuity_quarterly(mcp_client):
         {"payment": 5, "rate": 0.0175}
     )
     data = json.loads(result.content[0].text)
+    assert "result" in data
     assert abs(data["result"] - 285.71) < 0.01
     # Verify metadata
     assert data["type"] == "level_ordinary"

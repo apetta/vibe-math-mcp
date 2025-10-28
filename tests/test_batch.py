@@ -527,3 +527,151 @@ class TestBatchIntegration:
 
         assert "error" in data
         assert "nonexistent" in data["error"]["message"]
+
+    async def test_batch_matrix_decomposition_value_mode(self, mcp_client):
+        """Test matrix_decomposition in batch with value output mode."""
+        result = await mcp_client.call_tool(
+            "batch_execute",
+            {
+                "operations": [
+                    {
+                        "id": "svd",
+                        "tool": "matrix_decomposition",
+                        "arguments": {"matrix": [[1, 2], [3, 4]], "decomposition": "svd"},
+                    }
+                ],
+                "output_mode": "value",
+            },
+        )
+
+        data = json.loads(result.content[0].text)
+
+        # In value mode, should get flat mapping
+        assert "svd" in data
+        assert isinstance(data["svd"], dict)
+        assert "U" in data["svd"]
+        assert "singular_values" in data["svd"]
+        assert "Vt" in data["svd"]
+
+    async def test_batch_derivative_with_chaining(self, mcp_client):
+        """Test derivative in batch with result chaining using value_at_point."""
+        result = await mcp_client.call_tool(
+            "batch_execute",
+            {
+                "operations": [
+                    {
+                        "id": "deriv",
+                        "tool": "derivative",
+                        "arguments": {"expression": "x^2", "variable": "x", "point": 3},
+                    },
+                    {
+                        "id": "calc",
+                        "tool": "calculate",
+                        "arguments": {
+                            "expression": "x * 10",
+                            "variables": {"x": "$deriv.value_at_point"},
+                        },
+                        "depends_on": ["deriv"],
+                    },
+                ],
+            },
+        )
+
+        data = json.loads(result.content[0].text)
+
+        # Derivative of x^2 is 2x, at x=3 is 6
+        # Then 6 * 10 = 60
+        assert data["results"][0]["status"] == "success"
+        assert data["results"][1]["status"] == "success"
+        # Derivative result should be "2*x"
+        assert "2*x" in data["results"][0]["result"]["result"] or "2x" in data["results"][0]["result"]["result"]
+        # Value at point should be 6
+        assert data["results"][0]["result"]["value_at_point"] == 6.0
+        # Calculation result should be 60
+        assert data["results"][1]["result"]["result"] == 60.0
+        assert data["summary"]["num_waves"] == 2
+
+    async def test_batch_limits_series_minimal_mode(self, mcp_client):
+        """Test limits_series in batch with minimal output mode."""
+        result = await mcp_client.call_tool(
+            "batch_execute",
+            {
+                "operations": [
+                    {
+                        "id": "limit1",
+                        "tool": "limits_series",
+                        "arguments": {
+                            "expression": "sin(x)/x",
+                            "variable": "x",
+                            "point": 0,
+                            "operation": "limit",
+                        },
+                    },
+                    {
+                        "id": "series1",
+                        "tool": "limits_series",
+                        "arguments": {
+                            "expression": "exp(x)",
+                            "variable": "x",
+                            "point": 0,
+                            "operation": "series",
+                            "order": 4,
+                        },
+                    },
+                ],
+                "output_mode": "minimal",
+            },
+        )
+
+        data = json.loads(result.content[0].text)
+
+        # In minimal mode, should have simplified structure
+        assert "results" in data
+        assert len(data["results"]) == 2
+        assert data["results"][0]["id"] == "limit1"
+        assert data["results"][1]["id"] == "series1"
+        # Both should have value field (from result)
+        assert "value" in data["results"][0]
+        assert "value" in data["results"][1]
+
+    async def test_batch_all_three_tools_final_mode(self, mcp_client):
+        """Test all three fixed tools in a sequential chain with final mode."""
+        result = await mcp_client.call_tool(
+            "batch_execute",
+            {
+                "operations": [
+                    {
+                        "id": "deriv",
+                        "tool": "derivative",
+                        "arguments": {"expression": "x^3", "variable": "x", "order": 1},
+                    },
+                    {
+                        "id": "limit",
+                        "tool": "limits_series",
+                        "arguments": {
+                            "expression": "sin(x)/x",
+                            "variable": "x",
+                            "point": 0,
+                            "operation": "limit",
+                        },
+                        "depends_on": ["deriv"],
+                    },
+                    {
+                        "id": "svd",
+                        "tool": "matrix_decomposition",
+                        "arguments": {"matrix": [[2, 0], [0, 2]], "decomposition": "svd"},
+                        "depends_on": ["limit"],
+                    },
+                ],
+                "execution_mode": "sequential",
+                "output_mode": "final",
+            },
+        )
+
+        data = json.loads(result.content[0].text)
+
+        # Final mode should return only terminal result
+        assert "result" in data
+        assert isinstance(data["result"], dict)
+        # SVD result should have U, singular_values, Vt
+        assert "U" in data["result"] or "singular_values" in data["result"]
