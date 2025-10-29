@@ -255,22 +255,32 @@ class BatchExecutor:
             # Resolve arguments with dependencies
             resolved_args = self._resolve_arguments(op)
 
-            # Get tool function
+            # Get wrapped tool instance (not raw function)
             if op.tool not in self.tool_registry:
                 raise ValueError(
                     f"Tool '{op.tool}' not found in registry. "
                     f"Available tools: {', '.join(sorted(self.tool_registry.keys()))}"
                 )
 
-            tool_fn = self.tool_registry[op.tool]
+            tool = self.tool_registry[op.tool]
 
-            # Execute with timeout if specified
+            # Execute tool.run() with arguments dict
             if op.timeout_ms:
-                raw_result = await asyncio.wait_for(
-                    tool_fn(**resolved_args), timeout=op.timeout_ms / 1000
+                tool_result = await asyncio.wait_for(
+                    tool.run(resolved_args), timeout=op.timeout_ms / 1000
                 )
             else:
-                raw_result = await tool_fn(**resolved_args)
+                tool_result = await tool.run(resolved_args)
+
+            # Extract text content from ToolResult
+            from mcp.types import TextContent
+            if tool_result.content and isinstance(tool_result.content[0], TextContent):
+                raw_result = tool_result.content[0].text
+            else:
+                raise ValueError(
+                    f"Unexpected tool result format from {op.tool}. "
+                    f"Expected TextContent, got {type(tool_result.content[0]) if tool_result.content else 'no content'}"
+                )
 
             # Parse JSON result
             result_data = json.loads(raw_result)
@@ -336,6 +346,7 @@ class BatchExecutor:
         """Resolve operation arguments with result references.
 
         Applies result_mapping and resolves $refs in arguments.
+        Handles precedence for context and output_mode parameters.
 
         Args:
             op: Operation to resolve arguments for
@@ -350,6 +361,17 @@ class BatchExecutor:
 
         # Start with base arguments
         resolved = op.arguments.copy()
+
+        # Handle context precedence: operation-level > arguments-level
+        # If operation has context at operation level, remove from arguments
+        # (operation-level takes precedence and will be injected after execution)
+        if op.context and 'context' in resolved:
+            del resolved['context']
+
+        # Always remove output_mode from arguments to prevent double transformation
+        # The batch-level output_mode controls the entire response format
+        if 'output_mode' in resolved:
+            del resolved['output_mode']
 
         # Apply explicit result mappings (these override base arguments)
         if op.result_mapping:

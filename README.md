@@ -7,7 +7,7 @@
 [![Test Coverage](https://img.shields.io/badge/coverage-87%25-brightgreen)](https://github.com/apetta/vibe-math)
 [![Tests](https://img.shields.io/badge/tests-245%20passing-brightgreen)](https://github.com/apetta/vibe-math)
 
-A high-performance Model Context Protocol (MCP) server for math-ing whilst vibing with LLMs. Leveraging Polars for optimal calculation speed and comprehensive mathematical capabilities from basic arithmetic to advanced calculus and linear algebra.
+A high-performance Model Context Protocol (MCP) server for math-ing whilst vibing with LLMs. Built with Polars, Pandas, NumPy, SciPy, and SymPy for optimal calculation speed and comprehensive mathematical capabilities from basic arithmetic to advanced calculus and linear algebra.
 
 ## Features
 
@@ -23,7 +23,11 @@ A high-performance Model Context Protocol (MCP) server for math-ing whilst vibin
 
 ## Installation
 
-## Setup with Claude
+### IDEs
+
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install_Math-0098FF?style=flat-square&logo=visualstudiocode&logoColor=ffffff)](vscode:mcp/install?%7B%22name%22%3A%22Math%22%2C%22type%22%3A%22stdio%22%2C%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22vibe-math-mcp%22%5D%7D)
+
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en-US/install-mcp?name=Math&config=eyJjb21tYW5kIjoidXZ4IHZpYmUtbWF0aC1tY3AifQ%3D%3D)
 
 ### Claude Desktop
 
@@ -91,13 +95,13 @@ claude mcp add --transport stdio math -- uvx --from /absolute/path/to/vibe-math-
 
 **Verify:** Run `claude mcp list` or use `/mcp` or view available servers in IDEs.
 
-### IDEs
-
-**Try it:**
+### Try it
 
 - "Calculate 15% of 250" → uses `percentage`
 - "Find determinant of [[1,2],[3,4]]" → uses `matrix_operations`
 - "Integrate x^2 from 0 to 1" → uses `integral`
+- "If I invest $1000 at 5% annual interest compounded monthly for 10 years, what will be the future value?" → uses `compound_interest`
+- If I was paid the square root of $69m in 10 years, what's the present value at 7% discount rate? → uses `batch_execute (calculate -> financial_calcs)`
 
 ## Output Control
 

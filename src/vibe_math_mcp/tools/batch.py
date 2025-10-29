@@ -21,55 +21,25 @@ TOOL_CATEGORIES = {
 }
 
 
-def _build_tool_registry():
-    """Auto-discover all available tools by importing tool modules.
+async def _build_tool_registry_async():
+    """Build registry of wrapped tools from MCP server.
 
-    This is inspired by CustomMCP's automatic tool registration pattern.
-    Instead of manually maintaining a registry, we dynamically import
-    all tool modules and extract their exported functions.
-
-    FastMCP wraps decorated functions in FunctionTool objects, so we extract
-    the underlying async callable via the .fn attribute.
+    Uses CustomMCP-transformed tools which allows the same transformation layer that individual tool calls use.
 
     Returns:
-        Dictionary mapping tool_name -> async function
+        Dictionary mapping tool_name -> Tool instance (with wrapper support)
     """
-    # Import all tool modules
-    from . import basic, array, statistics as stats_module, financial, linalg, calculus
+    # Get all tool names from TOOL_CATEGORIES
+    tool_names = [tool for tools in TOOL_CATEGORIES.values() for tool in tools]
 
-    # Build registry by extracting underlying callables from FunctionTool wrappers
-    # Tool names match the @mcp.tool(name="...") decorators
-    registry = {
-        # Basic calculations (4 tools)
-        "calculate": basic.calculate.fn,
-        "percentage": basic.percentage.fn,
-        "round": basic.round_values.fn,
-        "convert_units": basic.convert_units.fn,
-        # Array operations (4 tools)
-        "array_operations": array.array_operations.fn,
-        "array_statistics": array.array_statistics.fn,
-        "array_aggregate": array.array_aggregate.fn,
-        "array_transform": array.array_transform.fn,
-        # Statistics (3 tools)
-        "statistics": stats_module.statistics.fn,
-        "pivot_table": stats_module.pivot_table.fn,
-        "correlation": stats_module.correlation.fn,
-        # Financial mathematics (3 tools)
-        "financial_calcs": financial.financial_calcs.fn,
-        "compound_interest": financial.compound_interest.fn,
-        "perpetuity": financial.perpetuity.fn,
-        # Linear algebra (3 tools)
-        "matrix_operations": linalg.matrix_operations.fn,
-        "solve_linear_system": linalg.solve_linear_system.fn,
-        "matrix_decomposition": linalg.matrix_decomposition.fn,
-        # Calculus (3 tools)
-        "derivative": calculus.derivative.fn,
-        "integral": calculus.integral.fn,
-        "limits_series": calculus.limits_series.fn,
-    }
+    # Build registry from wrapped tools in MCP server
+    registry = {}
+    for name in tool_names:
+        tool = await mcp._tool_manager.get_tool(name)
+        registry[name] = tool
 
-    # Validate registry matches TOOL_CATEGORIES (DRY enforcement)
-    expected_tools = {tool for tools in TOOL_CATEGORIES.values() for tool in tools}
+    # Validate all expected tools were found
+    expected_tools = set(tool_names)
     actual_tools = set(registry.keys())
     assert expected_tools == actual_tools, (
         f"Registry mismatch! Missing: {expected_tools - actual_tools}, "
@@ -110,18 +80,22 @@ Benefits: 90-95% token reduction, single API call, highly flexible workflows
 {{
   "operations": [
     {{"id": "coupon", "tool": "calculate",
+     "context": "Calculate annual coupon payment",
      "arguments": {{"expression": "principal * 0.04", "variables": {{"principal": 8306623.86}}}}}},
     {{"id": "fv", "tool": "financial_calcs",
+     "context": "Future value of coupon payments",
      "arguments": {{"calculation": "fv", "rate": 0.04, "periods": 10,
                    "payment": "$coupon.result", "present_value": 0}},
      "depends_on": ["coupon"]}},
     {{"id": "total", "tool": "calculate",
+     "context": "Total bond maturity value",
      "arguments": {{"expression": "fv + principal",
                    "variables": {{"fv": "$fv.result", "principal": 8306623.86}}}},
      "depends_on": ["fv"]}}
   ],
   "execution_mode": "auto",
-  "output_mode": "value"
+  "output_mode": "minimal",
+  "context": "Bond A 10-year valuation"
 }}
 ```
 
@@ -139,11 +113,11 @@ Benefits: 90-95% token reduction, single API call, highly flexible workflows
 - `parallel`: All concurrent (only if truly independent)
 
 ## Output Modes
+- `full`: Complete metadata (default)
+- `compact`: Remove nulls/whitespace
+- `minimal`: Basic operation objects with values
 - `value`: Flat {{id: value}} map (~90% smaller) - **use this for most cases**
 - `final`: Sequential chains only, returns terminal result (~95% smaller)
-- `minimal`: Basic operation objects with values
-- `compact`: Remove nulls/whitespace
-- `full`: Complete metadata (default)
 
 ## Structure
 Each operation:
@@ -211,8 +185,8 @@ async def batch_execute(
         JSON string with results array and execution summary
     """
     try:
-        # Build tool registry (DRY: auto-discovered from imports)
-        tool_registry = _build_tool_registry()
+        # Build tool registry from wrapped tools (supports context/output_mode)
+        tool_registry = await _build_tool_registry_async()
 
         # Validate tool names
         for op in operations:

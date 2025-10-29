@@ -143,10 +143,19 @@ def transform_batch_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
 
     if mode == "value":
         value_map = {}
+        errors = {}
+
         for r in results:
             if r.get("status") == "success" and r.get("result"):
                 op_id = r["id"]
                 value_map[op_id] = r["result"]["result"]
+            elif r.get("status") == "error":
+                # Extract error message (could be string or dict)
+                error_info = r.get("error")
+                if isinstance(error_info, dict):
+                    errors[r["id"]] = error_info.get("message", str(error_info))
+                else:
+                    errors[r["id"]] = str(error_info)
 
         result = {
             **value_map,
@@ -156,6 +165,11 @@ def transform_batch_response(data: Dict[str, Any], mode: str) -> Dict[str, Any]:
                 "time_ms": summary.get("total_execution_time_ms", 0),
             },
         }
+
+        # Add errors if any operations failed
+        if errors:
+            result["errors"] = errors
+
         if batch_context is not None:
             result["context"] = batch_context
         return result

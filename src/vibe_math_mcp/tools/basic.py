@@ -40,14 +40,22 @@ MULTIPLE VARIABLES:
     expression="x^2 + y^2", variables={"x": 3, "y": 4}
     Result: 25""",
     annotations=ToolAnnotations(
-        title="Mathematical Expression Calculator",
+        title="Expression Calculator",
         readOnlyHint=True,
         idempotentHint=True,
     ),
 )
 async def calculate(
-    expression: Annotated[str, Field(description="Mathematical expression (e.g., '2+2', 'sin(pi/2)', 'x^2+1')", min_length=1)],
-    variables: Annotated[Dict[str, float] | None, Field(description="Variable substitutions (e.g., {'x': 5, 'y': 10})")] = None,
+    expression: Annotated[
+        str,
+        Field(
+            description="Mathematical expression (e.g., '2+2', 'sin(pi/2)', 'x^2+1')", min_length=1
+        ),
+    ],
+    variables: Annotated[
+        Dict[str, float] | None,
+        Field(description="Variable substitutions (e.g., {'x': 5, 'y': 10})"),
+    ] = None,
 ) -> str:
     """Evaluate mathematical expressions."""
     try:
@@ -95,9 +103,13 @@ PERCENTAGE CHANGE: from 80 to 100
     ),
 )
 async def percentage(
-    operation: Annotated[Literal["of", "increase", "decrease", "change"], Field(description="Type of calculation")],
+    operation: Annotated[
+        Literal["of", "increase", "decrease", "change"], Field(description="Type of calculation")
+    ],
     value: Annotated[float, Field(description="Base value")],
-    percentage: Annotated[float, Field(description="Percentage amount (or new value for 'change')")],
+    percentage: Annotated[
+        float, Field(description="Percentage amount (or new value for 'change')")
+    ],
 ) -> str:
     """Perform percentage calculations."""
     try:
@@ -166,8 +178,13 @@ MULTIPLE VALUES:
     ),
 )
 async def round_values(
-    values: Annotated[Union[float, List[float]], Field(description="Single value or list (e.g., 3.14159 or [3.14, 2.71])")],
-    method: Annotated[Literal["round", "floor", "ceil", "trunc"], Field(description="Rounding method")] = "round",
+    values: Annotated[
+        Union[float, List[float]],
+        Field(description="Single value or list (e.g., 3.14159 or [3.14, 2.71])"),
+    ],
+    method: Annotated[
+        Literal["round", "floor", "ceil", "trunc"], Field(description="Rounding method")
+    ] = "round",
     decimals: Annotated[int, Field(description="Number of decimal places", ge=0)] = 0,
 ) -> str:
     """Advanced rounding operations."""
