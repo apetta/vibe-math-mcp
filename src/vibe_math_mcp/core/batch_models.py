@@ -41,11 +41,6 @@ class BatchOperation(BaseModel):
         max_length=200,
     )
 
-    depends_on: List[str] = Field(
-        default_factory=list,
-        description="List of operation IDs that must complete before this operation can execute",
-    )
-
     timeout_ms: Optional[int] = Field(
         default=None,
         description="Operation-specific timeout in milliseconds (100ms - 300s)",
@@ -61,15 +56,6 @@ class BatchOperation(BaseModel):
         This will be checked at runtime when the tool registry is available.
         Static validation happens in the batch_execute tool itself.
         """
-        return v
-
-    @field_validator('depends_on')
-    @classmethod
-    def validate_dependencies(cls, v: List[str]) -> List[str]:
-        """Check for duplicate dependencies."""
-        if v and len(set(v)) != len(v):
-            duplicates = [dep for dep in v if v.count(dep) > 1]
-            raise ValueError(f"Duplicate dependencies found: {duplicates}")
         return v
 
     @field_validator('id')

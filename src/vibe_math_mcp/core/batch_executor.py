@@ -187,11 +187,8 @@ class BatchExecutor:
         graph: Dict[str, List[str]] = {}
 
         for op_id, op in self.operations.items():
-            # Collect explicit dependencies
-            deps: Set[str] = set(op.depends_on)
-
-            # Scan arguments for $refs to detect implicit dependencies
-            deps.update(self._extract_refs_from_value(op.arguments))
+            # Scan arguments for $refs to detect dependencies
+            deps = self._extract_refs_from_value(op.arguments)
 
             # Convert set to list for TopologicalSorter
             graph[op_id] = list(deps)
@@ -291,7 +288,7 @@ class BatchExecutor:
                 result=result_data,
                 execution_time_ms=execution_time,
                 wave=wave,
-                dependencies=op.depends_on,
+                dependencies=list(self._extract_refs_from_value(op.arguments)),
                 label=op.label,
             )
 
@@ -308,7 +305,7 @@ class BatchExecutor:
                 },
                 execution_time_ms=execution_time,
                 wave=wave,
-                dependencies=op.depends_on,
+                dependencies=list(self._extract_refs_from_value(op.arguments)),
                 label=op.label,
             )
 
@@ -327,7 +324,7 @@ class BatchExecutor:
                 },
                 execution_time_ms=execution_time,
                 wave=wave,
-                dependencies=op.depends_on,
+                dependencies=list(self._extract_refs_from_value(op.arguments)),
                 label=op.label,
             )
 

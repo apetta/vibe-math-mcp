@@ -89,13 +89,11 @@ Example: `"payment": "$coupon.result"` or `"variables": {{"x": "$op1.result"}}`
     {{"id": "fv", "tool": "financial_calcs",
      "context": "Future value of coupon payments",
      "arguments": {{"calculation": "fv", "rate": 0.04, "periods": 10,
-                   "payment": "$coupon.result", "present_value": 0}},
-     "depends_on": ["coupon"]}},
+                   "payment": "$coupon.result", "present_value": 0}}}},
     {{"id": "total", "tool": "calculate",
      "context": "Total bond maturity value",
      "arguments": {{"expression": "fv + principal",
-                   "variables": {{"fv": "$fv.result", "principal": 8306623.86}}}},
-     "depends_on": ["fv"]}}
+                   "variables": {{"fv": "$fv.result", "principal": 8306623.86}}}}}}
   ],
   "execution_mode": "auto",
   "output_mode": "minimal",
@@ -128,7 +126,6 @@ Each operation:
 - `tool`: Tool name (required)
 - `arguments`: Tool parameters (required)
 - `id`: Unique identifier (auto-generated if omitted)
-- `depends_on`: Array of operation IDs that must complete first
 - `context`: Optional label for this operation
 
 Batch-level `context` parameter labels entire workflow across all output modes.
@@ -147,7 +144,7 @@ async def batch_execute(
             description=(
                 "List of operations to execute. Each operation MUST include: "
                 "tool (name), arguments (dict). Optional: id (UUID/string), context, label, "
-                "depends_on (list of IDs), timeout_ms (int)"
+                "timeout_ms (int)"
             ),
             min_length=1,
             max_length=100,
