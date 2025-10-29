@@ -46,15 +46,6 @@ class BatchOperation(BaseModel):
         description="List of operation IDs that must complete before this operation can execute",
     )
 
-    result_mapping: Optional[Dict[str, Any]] = Field(
-        default=None,
-        description=(
-            "Explicit mapping of argument keys to result references. "
-            "Example: {'variables': {'x': '$op1.result', 'y': '$op2.result'}} "
-            "Can be nested to match complex argument structures."
-        ),
-    )
-
     timeout_ms: Optional[int] = Field(
         default=None,
         description="Operation-specific timeout in milliseconds (100ms - 300s)",

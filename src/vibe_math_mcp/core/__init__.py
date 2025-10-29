@@ -16,7 +16,7 @@ from .converters import (
 )
 from .batch_models import BatchOperation, OperationResult, BatchSummary, BatchResponse
 from .batch_executor import BatchExecutor
-from .result_resolver import ResultResolver, resolve_batch_arguments
+from .result_resolver import ResultResolver
 
 __all__ = [
     # Validators
@@ -42,5 +42,4 @@ __all__ = [
     "BatchResponse",
     "BatchExecutor",
     "ResultResolver",
-    "resolve_batch_arguments",
 ]

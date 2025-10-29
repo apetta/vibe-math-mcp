@@ -1,7 +1,7 @@
 """Result resolution for batch operations with JSONPath-like syntax."""
 
 import re
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 
 class ResultResolver:
@@ -147,41 +147,3 @@ class ResultResolver:
                 )
 
         return current
-
-
-def resolve_batch_arguments(
-    arguments: Dict[str, Any],
-    result_mapping: Union[Dict[str, str], None],
-    results: Dict[str, Dict[str, Any]]
-) -> Dict[str, Any]:
-    """Helper function to resolve arguments with result mappings.
-
-    This combines explicit result_mapping with auto-resolution of $refs in arguments.
-
-    Args:
-        arguments: Base arguments dictionary
-        result_mapping: Explicit mapping of arg_key -> $ref (optional)
-        results: Completed operation results
-
-    Returns:
-        Fully resolved arguments dictionary
-
-    Example:
-        >>> arguments = {"expression": "x + y", "variables": {"x": 5, "y": "$op1.result"}}
-        >>> result_mapping = {"variables": {"x": "$op2.result"}}
-        >>> # result_mapping overrides, then $refs in values are resolved
-    """
-    resolver = ResultResolver(results)
-
-    # Start with base arguments
-    resolved = arguments.copy()
-
-    # Apply explicit result mappings (these take precedence)
-    if result_mapping:
-        for arg_key, ref in result_mapping.items():
-            resolved[arg_key] = resolver.resolve(ref)
-
-    # Resolve any remaining $refs in argument values
-    resolved = resolver.resolve(resolved)
-
-    return resolved

@@ -1,4 +1,4 @@
-# Vibe Math
+# Vibe Math MCP
 
 [![PyPI version](https://badge.fury.io/py/vibe-math-mcp.svg)](https://badge.fury.io/py/vibe-math-mcp)
 [![Python Version](https://img.shields.io/pypi/pyversions/vibe-math-mcp.svg)](https://pypi.org/project/vibe-math-mcp/)
@@ -80,7 +80,7 @@ Local development:
 claude mcp add --transport stdio math -- uvx --from /absolute/path/to/vibe-math-mcp vibe-math-mcp
 ```
 
-**Team setup** (create `.mcp.json` in project root for shared use with Claude Code and/or IDEs)
+**Team setup** (create `mcp.json` in project root for shared use with Claude Code and/or IDEs)
 
 ```json
 {

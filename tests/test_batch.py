@@ -103,7 +103,6 @@ class TestBatchModels:
         assert op.context is None
         assert op.label is None
         assert op.depends_on == []
-        assert op.result_mapping is None
         assert op.timeout_ms is None
         assert len(op.id) > 0  # UUID generated
 
@@ -230,7 +229,7 @@ class TestBatchExecutor:
         assert all(r.wave == 0 for r in response.results)
 
     async def test_auto_mode_dependency_detection(self):
-        """Test auto mode detects dependencies from result_mapping."""
+        """Test auto mode detects dependencies from $refs in arguments."""
 
         async def mock_calc(**kwargs):
             expr = kwargs.get("expression", "")
@@ -252,9 +251,11 @@ class TestBatchExecutor:
             BatchOperation(
                 id="op3",
                 tool="calculate",
-                arguments={"expression": "x + y"},
-                result_mapping={"variables": {"x": "$op1.result", "y": "$op2.result"}},
-                # No explicit depends_on - should be inferred from result_mapping
+                arguments={
+                    "expression": "x + y",
+                    "variables": {"x": "$op1.result", "y": "$op2.result"},
+                },
+                # No explicit depends_on - should be inferred from $refs in arguments
             ),
         ]
 

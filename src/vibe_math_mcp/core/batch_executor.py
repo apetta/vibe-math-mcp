@@ -190,11 +190,7 @@ class BatchExecutor:
             # Collect explicit dependencies
             deps: Set[str] = set(op.depends_on)
 
-            # Extract implicit dependencies from result_mapping
-            if op.result_mapping:
-                deps.update(self._extract_refs_from_mapping(op.result_mapping))
-
-            # Also scan arguments for $refs (in case user didn't use result_mapping)
+            # Scan arguments for $refs to detect implicit dependencies
             deps.update(self._extract_refs_from_value(op.arguments))
 
             # Convert set to list for TopologicalSorter
@@ -212,13 +208,6 @@ class BatchExecutor:
                 )
 
         return TopologicalSorter(graph)
-
-    def _extract_refs_from_mapping(self, mapping: Dict[str, Any]) -> Set[str]:
-        """Extract operation IDs from result_mapping references."""
-        refs: Set[str] = set()
-        for value in mapping.values():
-            refs.update(self._extract_refs_from_value(value))
-        return refs
 
     def _extract_refs_from_value(self, value: Any) -> Set[str]:
         """Recursively extract $operation_id references from any value."""
@@ -345,7 +334,7 @@ class BatchExecutor:
     def _resolve_arguments(self, op: BatchOperation) -> Dict[str, Any]:
         """Resolve operation arguments with result references.
 
-        Applies result_mapping and resolves $refs in arguments.
+        Resolves $refs in arguments.
         Handles precedence for context and output_mode parameters.
 
         Args:
@@ -373,12 +362,7 @@ class BatchExecutor:
         if 'output_mode' in resolved:
             del resolved['output_mode']
 
-        # Apply explicit result mappings (these override base arguments)
-        if op.result_mapping:
-            for arg_key, ref in op.result_mapping.items():
-                resolved[arg_key] = resolver.resolve(ref)
-
-        # Resolve any remaining $refs in argument values
+        # Resolve all $refs in argument values
         resolved = resolver.resolve(resolved)
 
         return resolved

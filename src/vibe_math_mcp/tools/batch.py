@@ -71,9 +71,13 @@ Benefits: 90-95% token reduction, single API call, highly flexible workflows
 {_generate_tool_reference()}
 
 **Result referencing:**
+
+Pass `$op_id.result` directly in any parameter:
 - `$op_id.result` - Use output from prior operation
-- `$op_id.metadata.field` - Access nested fields
 - `$op_id.result[0]` - Array indexing
+- `$op_id.metadata.field` - Nested fields
+
+Example: `"payment": "$coupon.result"` or `"variables": {{"x": "$op1.result"}}`
 
 **Example - Bond valuation:**
 ```json
@@ -143,7 +147,7 @@ async def batch_execute(
             description=(
                 "List of operations to execute. Each operation MUST include: "
                 "tool (name), arguments (dict). Optional: id (UUID/string), context, label, "
-                "depends_on (list of IDs), result_mapping (dict), timeout_ms (int)"
+                "depends_on (list of IDs), timeout_ms (int)"
             ),
             min_length=1,
             max_length=100,
