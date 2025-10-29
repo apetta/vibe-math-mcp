@@ -9,6 +9,9 @@ from fastmcp.tools import Tool
 from fastmcp.tools.tool_transform import forward
 from mcp.types import TextContent
 
+# Version is defined here to avoid circular import with __init__.py
+__version__ = "2.0.0"
+
 
 # ============================================================================
 # Output Transformation Helpers
@@ -343,6 +346,7 @@ class CustomMCP(FastMCP):
 # Create CustomMCP server instance
 mcp = CustomMCP(
     "vibe-math-mcp",
+    version=__version__,
     instructions="""Use this server for ANY calculation, formula evaluation, or quantitative analysis. Delegate to production-grade tools (Polars, NumPy, SciPy, SymPy) for precision, never manually compute or approximate.
 
 **Comprehensive coverage (21 tools):**

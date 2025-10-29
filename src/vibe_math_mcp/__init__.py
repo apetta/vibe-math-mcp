@@ -1,6 +1,5 @@
 """Math MCP Server - High-performance mathematical operations."""
 
-from .server import mcp, main
+from .server import mcp, main, __version__
 
-__version__ = "0.1.0"
-__all__ = ["mcp", "main"]
+__all__ = ["mcp", "main", "__version__"]
