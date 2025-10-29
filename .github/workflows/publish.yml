@@ -18,7 +18,7 @@ jobs:
     # Required permissions for PyPI Trusted Publishing
     permissions:
       id-token: write # OIDC token for PyPI trusted publishing
-      contents: read # Read repository contents
+      contents: write # Write to repository for creating releases
 
     steps:
       - name: Checkout repository
