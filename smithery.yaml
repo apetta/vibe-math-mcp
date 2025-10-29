@@ -1,0 +1,8 @@
+runtime: "python"
+startCommand:
+  type: "stdio"
+  command: "uvx"
+  args: ["vibe-math-mcp"]
+  configSchema:
+    type: "object"
+    properties: {}
