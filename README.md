@@ -19,7 +19,7 @@ A high-performance Model Context Protocol (MCP) server for math-ing whilst vibin
 - **Financial Mathematics** (3 tools): Time value of money, compound interest, perpetuity
 - **Linear Algebra** (3 tools): Matrix operations, system solving, decompositions
 - **Calculus** (3 tools): Derivatives, integrals, limits & series
-- **Batch Execution** (1 tool): Multi-tool orchestration
+- **Batch Execution** (1 tool): Multi-tool orchestration for complex workflows
 
 ## Installation
 
@@ -116,6 +116,12 @@ Control response verbosity using the `output_mode` parameter (available on **eve
 | `minimal` | Primary value(s) only, strip metadata              | ~60-70%       | Fast extraction, minimal context            |
 | `value`   | Normalized `{value: X}` structure                  | ~70-80%       | Consistent chaining, maximum simplicity     |
 | `final`   | For sequential chains, return only terminal result | ~95%          | Simple calculations, predictable extraction |
+
+## Batch Execution
+
+For multi-step workflows, `batch_execute` chains multiple calculations in a single request—**achieving 90-95% token reduction**. Reference prior outputs using `$operation_id.result` syntax, and the engine automatically handles dependency resolution and parallel execution for speed.
+
+**Perfect for:** Bond pricing, financial models, statistical pipelines, complex transformations
 
 ## Complete Tool Reference
 
