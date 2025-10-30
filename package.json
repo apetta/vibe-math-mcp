@@ -1,0 +1,25 @@
+{
+  "name": "vibe-math-mcp",
+  "version": "2.0.2",
+  "description": "High-performance MCP server for mathematical operations using Polars and scientific Python",
+  "license": "MIT",
+  "author": "Akshay Petta",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/akshaypetta/vibe-math-mcp.git"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "math",
+    "mathematics",
+    "calculator",
+    "polars",
+    "numpy",
+    "scipy",
+    "sympy",
+    "pandas",
+    "python",
+    "vibe"
+  ]
+}

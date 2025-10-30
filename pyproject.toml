@@ -1,6 +1,6 @@
 [project]
 name = "vibe-math-mcp"
-version = "2.0.1"
+version = "2.0.2"
 description = "High-performance MCP server for mathematical operations using Polars and scientific Python"
 license = "MIT"
 keywords = [
