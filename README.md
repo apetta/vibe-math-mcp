@@ -1,5 +1,6 @@
 # Vibe Math MCP
 
+[![smithery badge](https://smithery.ai/badge/@apetta/vibe-math-mcp)](https://smithery.ai/server/@apetta/vibe-math-mcp)
 [![PyPI version](https://badge.fury.io/py/vibe-math-mcp.svg)](https://badge.fury.io/py/vibe-math-mcp)
 [![Python Version](https://img.shields.io/pypi/pyversions/vibe-math-mcp.svg)](https://pypi.org/project/vibe-math-mcp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -134,7 +135,7 @@ For multi-step workflows, `batch_execute` chains multiple calculations in a sing
 | `calculate`     | Evaluate mathematical expressions with variable substitution |
 | `percentage`    | Percentage calculations (of, increase, decrease, change)     |
 | `round`         | Advanced rounding (round, floor, ceil, trunc)                |
-| `convert_units` | Unit conversions (degrees � radians)                         |
+| `convert_units` | Unit conversions (degrees – radians)                         |
 
 ### Array Operations
 
@@ -178,8 +179,6 @@ For multi-step workflows, `batch_execute` chains multiple calculations in a sing
 
 ---
 
-````
-
 ## Development
 
 ### Running Tests
@@ -190,8 +189,7 @@ uv sync
 
 # Run all tests
 uv run poe test
-
-````
+```
 
 ### Local Development Modes
 
