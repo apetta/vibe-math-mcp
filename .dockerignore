@@ -1,0 +1,26 @@
+# Version control
+.git/
+.github/
+
+# Python artifacts
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Documentation (README.md is required for build)
+DEPLOYMENT_GUIDE.md
+CONTAINER_DEPLOYMENT.md
+feedback.md
+improvements.md
+
+# Tests
+tests/
+
+# IDE & Local config
+.vscode/
+.idea/
+.DS_Store

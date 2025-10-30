@@ -178,6 +178,8 @@ For multi-step workflows, `batch_execute` chains multiple calculations in a sing
 
 ---
 
+````
+
 ## Development
 
 ### Running Tests
@@ -189,6 +191,20 @@ uv sync
 # Run all tests
 uv run poe test
 
+````
+
+### Local Development Modes
+
+**STDIO Mode** (default - for Claude Desktop, IDEs):
+
+```bash
+uv run vibe-math-mcp
+```
+
+**HTTP Mode** (for container testing):
+
+```bash
+uv run python -m vibe_math_mcp.http_server
 ```
 
 ## License

@@ -41,10 +41,13 @@ dependencies = [
     "sympy~=1.14.0",
     "pydantic~=2.12.3",
     "pyarrow~=22.0.0",
+    "uvicorn~=0.34.0",
+    "starlette~=0.41.0",
 ]
 
 [project.scripts]
 vibe-math-mcp = "vibe_math_mcp.server:main"
+vibe-math-mcp-http = "vibe_math_mcp.http_server:main"
 
 [project.optional-dependencies]
 dev = [

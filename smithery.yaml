@@ -1,8 +1,6 @@
-runtime: "python"
+runtime: "container"
+build:
+  dockerfile: "Dockerfile"
+  dockerBuildPath: "."
 startCommand:
-  type: "stdio"
-  command: "uvx"
-  args: ["vibe-math-mcp"]
-  configSchema:
-    type: "object"
-    properties: {}
+  type: "http"
