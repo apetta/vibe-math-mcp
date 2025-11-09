@@ -265,14 +265,7 @@ class CustomMCP(FastMCP):
             output_mode: Annotated[
                 Literal["full", "compact", "minimal", "value", "final"],
                 Field(
-                    description=(
-                        "Control response verbosity:\n"
-                        "- 'full' (default): Complete response with all metadata\n"
-                        "- 'compact': Remove null fields, minimize whitespace (~20-30% smaller)\n"
-                        "- 'minimal': Primary value(s) only, no metadata (~60-70% smaller)\n"
-                        "- 'value': Normalized {value: X} structure (~70-80% smaller)\n"
-                        "- 'final': For sequential chains, return only terminal result (~95% smaller)"
-                    )
+                    description="Output format: full (default), compact, minimal, value, or final. See batch_execute tool for details."
                 ),
             ] = "full",
             **kwargs: Any,
