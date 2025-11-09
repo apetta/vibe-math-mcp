@@ -80,7 +80,7 @@ Local development:
 claude mcp add --transport stdio math -- uvx --from /absolute/path/to/vibe-math-mcp vibe-math-mcp
 ```
 
-**Team setup** (create `mcp.json` in project root for shared use with Claude Code and/or IDEs)
+**Team setup** (create `.mcp.json` in project root for shared use with Claude Code and/or IDEs)
 
 ```json
 {
