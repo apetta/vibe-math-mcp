@@ -10,7 +10,7 @@ from fastmcp.tools.tool_transform import forward
 from mcp.types import TextContent
 
 # Version is defined here to avoid circular import with __init__.py
-__version__ = "2.0.2"
+__version__ = "2.0.3"
 
 
 # ============================================================================
