@@ -6,3 +6,11 @@ startCommand:
   type: "http"
   configSchema:
     type: "object"
+    properties:
+      PORT:
+        type: "integer"
+        description: "HTTP server port for containerised deployment"
+        default: 8080
+        minimum: 1
+        maximum: 65535
+    additionalProperties: false

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <!-- Dark gradient background -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e1b4b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#312e81;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded square background -->
+  <rect width="100" height="100" rx="22" fill="url(#bgGrad)"/>
+
+  <!-- VIBE spelled with math symbols - clean, minimal, well-spaced -->
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" fill="#e0e7ff">
+    <!-- V = √ (square root) -->
+    <text x="12" y="58" font-size="32" font-weight="300">√</text>
+
+    <!-- I = ∫ (integral) -->
+    <text x="32" y="58" font-size="34" font-weight="300">∫</text>
+
+    <!-- B = β (beta) -->
+    <text x="52" y="58" font-size="32" font-weight="300">β</text>
+
+    <!-- E = Σ (sigma) -->
+    <text x="72" y="58" font-size="30" font-weight="300">Σ</text>
+  </g>
+</svg>
