@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/apetta-vibe-math-mcp-badge.png)](https://mseep.ai/app/apetta-vibe-math-mcp)
+
 # Vibe Math MCP
 
 [![PyPI version](https://badge.fury.io/py/vibe-math-mcp.svg)](https://badge.fury.io/py/vibe-math-mcp)
