@@ -3,7 +3,7 @@
 [![PyPI version](https://badge.fury.io/py/vibe-math-mcp.svg)](https://badge.fury.io/py/vibe-math-mcp)
 [![Python Version](https://img.shields.io/pypi/pyversions/vibe-math-mcp.svg)](https://pypi.org/project/vibe-math-mcp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Smithery](https://smithery.ai/badge/@apetta/vibe-math-mcp)](https://smithery.ai/server/@apetta/vibe-math-mcp)
+[![LightNow capabilities](https://lightnow.ai/badge/io.github.apetta/vibe-math-mcp)](https://lightnow.ai/servers/io.github.apetta/vibe-math-mcp)
 [![Test Coverage](https://img.shields.io/badge/coverage-87%25-brightgreen)](https://github.com/apetta/vibe-math)
 [![Tests](https://img.shields.io/badge/tests-245%20passing-brightgreen)](https://github.com/apetta/vibe-math)
 
